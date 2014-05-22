@@ -11,12 +11,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
 
+import android.util.Log;
+
 
 
 public class MainActivity extends Activity {
 
+
+    private static final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
+        Log.d(TAG, "test");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
