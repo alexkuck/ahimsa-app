@@ -49,18 +49,19 @@
         android:layout_height="wrap_content"
         android:inputType="textMultiLine"
         android:ems="10"
-        android:id="@+id/editText"
+        android:id="@+id/messageText"
         android:layout_below="@+id/view2"
         android:layout_centerHorizontal="true"
         android:hint="Enter Raw Transaction"
-        android:minLines="8" />
+        android:minLines="8"
+        android:maxLines="8" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Broadcast Transaction"
-        android:id="@+id/button"
-        android:layout_below="@+id/editText"
+        android:id="@+id/broadcastButton"
+        android:layout_below="@+id/messageText"
         android:layout_centerHorizontal="true" />
 
     <Button
@@ -68,7 +69,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="PeerCount"
-        android:id="@+id/button2"
+        android:id="@+id/peerCount"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true" />
 

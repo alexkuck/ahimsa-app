@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -21,6 +22,7 @@ import java.net.InetSocketAddress;
 
 import com.google.bitcoin.core.Peer;
 import com.google.bitcoin.core.PeerGroup;
+import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.net.discovery.DnsDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscoveryException;
@@ -35,15 +37,20 @@ public class NodeService extends Service {
 
     //Configuration------------------------------------------
     public static final boolean TEST = true;
-    public static final String trustedPeerHost = null; //set to null for no trustedPeer
+    public static final String trustedPeerHost = ""; //"24.125.163.221"; //set to empty string for no trusted peer
     public static final int maxConnectedPeers = 6;
 
     //Constants----------------------------------------------
     public static final String USER_AGENT = "ahimsa-app";
     public static final String VERSION = "alpha";
     public static final NetworkParameters NETWORK_PARAMETERS = TEST ? TestNet3Params.get() : MainNetParams.get();
-    public static final String ACTION_BROADCAST_TRANSACTION = NodeService.class.getPackage().getName() + ".broadcast_transaction";
 
+    //Intent Actions-----------------------------------------
+    public static final String ACTION_BROADCAST_TRANSACTION = "broadcastTransaction";
+    public static final String ACTION_TOAST_NUM_PEERS = "toastNumPeers";
+    public static final String HEX_STRING_TRANSACTION = "hexstringTransaction";
+    public static final String BYTE_ARRAY_TRANSACTION = "byteArrayTransaction";
+//    public static final String ACTION_BROADCAST_TRANSACTION = NodeService.class.getPackage().getName() + ".broadcast_transaction";
 
     //NodeService--------------------------------------------
     private long serviceCreatedAt;
@@ -84,13 +91,20 @@ public class NodeService extends Service {
 
         final String action = intent.getAction();
         if(ACTION_BROADCAST_TRANSACTION.equals(action)){
-            final Transaction tx = null;
+            final byte[] tx_byte_array = intent.getByteArrayExtra(BYTE_ARRAY_TRANSACTION);
+            final Transaction tx = new Transaction(NETWORK_PARAMETERS, tx_byte_array);
             //****WORK TO BE DONE HERE****
 
             if (peerGroup != null){
-                Log.d(TAG, "broadcasting transaction " + tx.getHashAsString());
+                Log.d(TAG, "TX.GETHASHASSTRING(): " + tx.getHashAsString());
+                Log.d(TAG, "TX_BYTE_ARRAY: " + tx_byte_array);
                 peerGroup.broadcastTransaction(tx);
             }
+
+        }
+
+        else if(ACTION_TOAST_NUM_PEERS.equals(action)){
+            toastNumberOfPeers();
 
         }
 
@@ -167,6 +181,7 @@ public class NodeService extends Service {
                 peerGroup.setUserAgent(USER_AGENT, VERSION);
                 //to get peer count add peerConnectivityListener to peerGroup [BSI: 391]
 
+                Log.d(TAG, "started peergroup");
                 final boolean hasTrustedPeer = !trustedPeerHost.isEmpty();
                 peerGroup.setMaxConnections(hasTrustedPeer ? 1 : maxConnectedPeers);
 
@@ -226,13 +241,23 @@ public class NodeService extends Service {
         }
     };
 
-    //see if this works:
-    public List<Peer> getConnectedPeers(){
+    //return list of connected peers
+    private List<Peer> getConnectedPeers(){
         if (peerGroup != null)
             return peerGroup.getConnectedPeers();
         else
             return null;
     }
+
+    //toast number of peers.
+    private void toastNumberOfPeers(){
+        int numPeers = getConnectedPeers().size();
+        Toast.makeText(getApplicationContext(), "Connected Peers: " + numPeers,
+                Toast.LENGTH_SHORT).show();
+    }
+
+
+
 
 }
 
