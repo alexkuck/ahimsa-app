@@ -6,7 +6,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -18,10 +20,12 @@ public class MainActivity extends Activity {
     //Constants----------------------------------------------
     public static final String ACTION_ENABLE_NODE_SERVICE = "enableNodeService";
     public static final String ACTION_DISABLE_NODE_SERVICE = "disableNodeService";
+    public static final String IS_TESTNET = "istestnet";
 
     //MainActivity-------------------------------------------
     private static final String TAG = "MainActivity";
     private Intent nodeServiceIntent;
+    private static boolean testnet;
 
     //Activity Overrides-------------------------------------
     @Override
@@ -45,10 +49,21 @@ public class MainActivity extends Activity {
         registerReceiver(fragmentReceiver, intentFilter_fragment);
 
         //Set up intent for service receiver
-//        final IntentFilter intentFilter_service = new IntentFilter();
-//        intentFilter_service.addAction();
-
         nodeServiceIntent = new Intent(this, NodeService.class);
+
+        //Run only at installation
+        SharedPreferences wmbPreference = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isFirstRun = wmbPreference.getBoolean("FIRSTRUN", true);
+        if (isFirstRun)
+        {
+            Log.d(TAG, "INSTALL PROCESS");
+            installProcess();
+
+            SharedPreferences.Editor editor = wmbPreference.edit();
+            editor.putBoolean("FIRSTRUN", false);
+            editor.commit();
+        }
+
 
     }
 
@@ -77,6 +92,100 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void installProcess(){
+        //Prompt user: Generate key or import key
+
+        //BOTH
+        //a key has many transactions
+        //a transaction has a single key
+
+        //sqlite associated key:
+        //int:  ID
+        //text: time created
+        //text: network
+        //int:  version
+        //text: private key
+        //text: public address
+        //int:  last sent bulletin
+
+        //sqlite bulletin:
+        //(vout, amount, txid are for creating the NEXT bulletin)
+        //int:  ID
+        //associated key
+        //text: time
+        //text: txid
+        //int:  input amount (100m)
+        //int:  vout
+        //text: message
+        //text: topic
+        //int:  confirmed (boolean)
+
+
+        //IMPORT KEY
+        //manual input (format types?)
+        //QR code
+        //generate key from input
+        //store in database
+
+        //GENERATE KEY
+        //generate new key
+        //request for funded transaction
+        //distribute this transaction with added device address
+        //store key in database
+
+        //USER SETTINGS
+        //generate new key
+        //import new key
+
+        //NAVIGATION DRAWER:
+        //Broadcast Bulletin (similar to ahimsa.io):
+        //  -current address
+        //      -with emphasis on beginning characters
+        //  -current balance
+        //  -estimated cost
+        //  -message edittext
+        //  -topic edittext
+        //  -broadcast transaction button
+
+
+        //Create
+        //  -Broadcast
+        //  -Past Transactions
+        //  -Keys
+        //Browse
+        //  -Browse topics, trending topics
+        //  -View board
+        //  -Settings (who to point to)
+        //Bitcoin
+        //  -Status
+        //  -Settings
+        //Application
+        //  -Settings
+        //  -Version information
+        //  -How ahimsa works.
+
+
+
+        //ping traffic light in top right; clickable, shows more details
+
+        //GENERAL TO DO:
+        //do UI well, alex.
+        //convert service to intentservice
+        //build out server to handle funding addresses
+        //rename folders
+        //handle constants better
+        //transaction confirmation verification
+        //encrypt database with passwords?
+        //POINT AT AHIMSA NODE, what functionality could this add?
+        //  -browse
+
+        //handle key fund tracking after initial
+
+
+
+
+    }
+
 
     //Receiver to communicate with fragment------------------
     private final BroadcastReceiver fragmentReceiver = new BroadcastReceiver() {
@@ -85,7 +194,7 @@ public class MainActivity extends Activity {
             String action = intent.getAction();
             if (action != null) {
                 if (ACTION_ENABLE_NODE_SERVICE.equals(action)) {
-                    enableNodeService();
+                    enableNodeService(intent);
                 }
                 else if (ACTION_DISABLE_NODE_SERVICE.equals(action)) {
                     disableNodeService();
@@ -101,8 +210,12 @@ public class MainActivity extends Activity {
 
     //-------------------------------------------------------
     //start node service
-    private void enableNodeService(){
+    private void enableNodeService(Intent intent){
+//        testnet = intent.getBooleanExtra(IS_TESTNET, false);
+//        Log.d(TAG, "IS_TESTNET: " + testnet);
+
         startService(nodeServiceIntent);
+
         Toast.makeText(getApplicationContext(), "Enabled NodeService",
                 Toast.LENGTH_SHORT).show();
     }

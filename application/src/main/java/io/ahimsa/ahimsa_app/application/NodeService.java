@@ -61,7 +61,7 @@ public class NodeService extends Service {
 
 
     //-------------------------------------------------------
-    //Service Overrides         TODO: onStartCommand-txbroadcast
+    //Service Overrides
 
     @Override
     public void onCreate(){
@@ -93,7 +93,6 @@ public class NodeService extends Service {
         if(ACTION_BROADCAST_TRANSACTION.equals(action)){
             final byte[] tx_byte_array = intent.getByteArrayExtra(BYTE_ARRAY_TRANSACTION);
             final Transaction tx = new Transaction(NETWORK_PARAMETERS, tx_byte_array);
-            //****WORK TO BE DONE HERE****
 
             if (peerGroup != null){
                 Log.d(TAG, "TX.GETHASHASSTRING(): " + tx.getHashAsString());

@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.ToggleButton;
 
 import org.w3c.dom.Node;
@@ -23,6 +24,7 @@ public class txBroadcastFragment extends Fragment {
     //txBroadcastFragment------------------------------------
     private static final String TAG = "txBroadcastFragment";
     private Activity parent_activity;
+    private boolean testnet;
 
 
     @Override
@@ -42,6 +44,19 @@ public class txBroadcastFragment extends Fragment {
             }
         });
 
+        final Switch testnetSwitch = (Switch) V.findViewById(R.id.testnet);
+        testnetSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    testnet = true;
+                } else {
+                    testnet = false;
+                }
+            }
+        });
+
+
+
         final EditText messageText = (EditText) V.findViewById(R.id.messageText);
         Button txBroadcastButton = (Button) V.findViewById(R.id.broadcastButton);
         txBroadcastButton.setOnClickListener(new View.OnClickListener() {
@@ -53,7 +68,7 @@ public class txBroadcastFragment extends Fragment {
             }
         });
 
-        Button peerCountButton = (Button) V.findViewById(R.id.peerCount);
+        final Button peerCountButton = (Button) V.findViewById(R.id.peerCount);
         peerCountButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View V) {
@@ -63,12 +78,19 @@ public class txBroadcastFragment extends Fragment {
 
 
 
+
         return V;
 
     }
 
     public void toggleEnabled(View V){
-        parent_activity.sendBroadcast(new Intent().setAction(MainActivity.ACTION_ENABLE_NODE_SERVICE));
+        Intent intent = new Intent();
+        intent.setAction(MainActivity.ACTION_ENABLE_NODE_SERVICE);
+        Log.d(TAG, "TESTNET: " + testnet);
+
+//        intent.putExtra(MainActivity.IS_TESTNET, testnet);
+
+        parent_activity.sendBroadcast(intent);
 
     }
 
