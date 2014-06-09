@@ -9,6 +9,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.widget.DrawerLayout;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -27,6 +29,7 @@ public class MainActivity extends Activity {
     private Intent nodeServiceIntent;
     private static boolean testnet;
 
+
     //Activity Overrides-------------------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +42,7 @@ public class MainActivity extends Activity {
                     .add(R.id.container, new txBroadcastFragment())
                     .commit();
         }
+
 
         //Set up intent for fragment receiver
         final IntentFilter intentFilter_fragment = new IntentFilter();
