@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ahimsa-app</string>
+
+    <string name="title_section1">Create Bulletin</string>
+    <string name="title_section2">Previous Bulletins</string>
+    <string name="title_section3">Key</string>
+    <string name="title_section4">Network Status</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_example">Example action</string>
+    <string name="action_nodeservice">Node Service</string>
+    <string name="action_peercount">#</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+</resources>
