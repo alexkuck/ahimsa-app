@@ -25,13 +25,10 @@ public class MainActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 
 
-    //Constants----------------------------------------------
-    public static final String ACTION_ENABLE_NODE_SERVICE = "enableNodeService";
-    public static final String ACTION_DISABLE_NODE_SERVICE = "disableNodeService";
-    public static final String IS_TESTNET = "istestnet";
+    //TODO: convert fragment broadcast tx from oldnodeservice to nodeservice
 
     //MainActivity-------------------------------------------
-    private static final String TAG = "MainActivity";
+    private static final String TAG = MainActivity.class.toString();
     private MainApplication application;
 
     //NavDrawer----------------------------------------------
@@ -61,9 +58,6 @@ public class MainActivity extends Activity
 
         //Set up intent for fragment receiver-----------------------------------
         final IntentFilter intentFilter_fragment = new IntentFilter();
-        intentFilter_fragment.addAction(ACTION_ENABLE_NODE_SERVICE);
-        intentFilter_fragment.addAction(ACTION_DISABLE_NODE_SERVICE);
-        intentFilter_fragment.addAction(OldNodeService.ACTION_TOAST_NUM_PEERS);
         intentFilter_fragment.addAction(OldNodeService.ACTION_BROADCAST_TRANSACTION);
         registerReceiver(fragmentReceiver, intentFilter_fragment);
 
@@ -126,13 +120,12 @@ public class MainActivity extends Activity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_nodeservice) {
-            toggleNodeService();
             Log.d(TAG, "Node Service Toggle");
+            testNodeService();
             return true;
         }
 
         if (id == R.id.action_peercount) {
-            toastNumberOfPeers();
             return true;
         }
 
@@ -146,15 +139,7 @@ public class MainActivity extends Activity
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (action != null) {
-                if (ACTION_ENABLE_NODE_SERVICE.equals(action)) {
-                    enableNodeService();
-                }
-                else if (ACTION_DISABLE_NODE_SERVICE.equals(action)) {
-                    disableNodeService();
-                }
-                else if (OldNodeService.ACTION_TOAST_NUM_PEERS.equals(action)){
-                    toastNumberOfPeers();
-                } else if (OldNodeService.ACTION_BROADCAST_TRANSACTION.equals(action)){
+                if (OldNodeService.ACTION_BROADCAST_TRANSACTION.equals(action)){
                     broadcastTx(intent);
                 }
             }
@@ -163,26 +148,9 @@ public class MainActivity extends Activity
 
     //-------------------------------------------------------
 
-    //toggle node service
-    private void toggleNodeService(){
-        if(!isNodeServiceRunning()) {
-            Log.d(TAG, "Enabling Node Service (toggle Node Service)");
-            enableNodeService();
-        } else {
-            Log.d(TAG, "Disabling Node Service (toggle Node Service)");
-            disableNodeService();
-        }
-    }
-
-
     //start node service
-    private void enableNodeService(){
-        application.enableNodeService();
-    }
-
-    //stop node service
-    private void disableNodeService(){
-        application.disableNodeService();
+    private void testNodeService(){
+        application.testPeerCount();
     }
 
     //send byte array to node service for broadcast
@@ -197,29 +165,7 @@ public class MainActivity extends Activity
         startService(intent_to_NodeService);
     }
 
-    //tell node service to toast number of pears if running. else toast negative statement.
-    private void toastNumberOfPeers(){
-        if(isNodeServiceRunning()) {
-            Intent toastNumberOfPeersIntent = new Intent(this, OldNodeService.class);
-            toastNumberOfPeersIntent.setAction(OldNodeService.ACTION_TOAST_NUM_PEERS);
-            startService(toastNumberOfPeersIntent);
-        } else {
-            Toast.makeText(getApplicationContext(), "OldNodeService is not running",
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
     //-------------------------------------------------------
-    //returns boolean of whether node service is running. not recommended for production.
-    private boolean isNodeServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (OldNodeService.class.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     //good utility method. hex string to byte array. eventually will live within message library.
     private static byte[] hexStringToByteArray(String s) {

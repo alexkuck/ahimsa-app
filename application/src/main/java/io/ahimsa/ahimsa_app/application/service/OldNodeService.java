@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.net.InetSocketAddress;
 
@@ -82,6 +84,7 @@ public class OldNodeService extends Service {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(connectivityReceiver, intentFilter);
+
         Toast.makeText(getApplicationContext(), "Enabled OldNodeService",
                 Toast.LENGTH_SHORT).show();
     }
@@ -166,6 +169,13 @@ public class OldNodeService extends Service {
         @Override
         public void onReceive(final Context context, final Intent intent){
             final String action = intent.getAction();
+            Log.d(TAG, "onReceive action: " + action);
+
+            Bundle extras = intent.getExtras();
+            for (String key: extras.keySet()) {
+                Log.d(TAG, "key [" + key + "]:" + extras.get(key));
+            }
+
 
             if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)){
                 hasConnectivity = !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);

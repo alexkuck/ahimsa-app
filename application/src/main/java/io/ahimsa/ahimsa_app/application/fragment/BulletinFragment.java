@@ -20,10 +20,8 @@ import io.ahimsa.ahimsa_app.application.service.OldNodeService;
 public class BulletinFragment extends Fragment {
 
     //txBroadcastFragment------------------------------------
-    private static final String TAG = "BulletinFragment";
+    private static final String TAG = BulletinFragment.class.toString();
     private Activity parent_activity;
-    private boolean testnet;
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
