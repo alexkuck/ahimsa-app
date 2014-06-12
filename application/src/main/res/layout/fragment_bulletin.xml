@@ -10,28 +10,26 @@
 
     tools:context="io.ahimsa.ahimsa_app.application.fragment.BulletinFragment">
 
-
     <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/topic"
-        android:layout_centerHorizontal="true"
-        android:hint="Topic"
-        android:singleLine="true" />
-
-    <EditText
+        android:id="@+id/bulletinText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="textMultiLine"
-        android:layout_below="@+id/topic"
+        android:layout_below="@+id/topicText"
         android:ems="10"
-        android:id="@+id/messageText"
         android:layout_centerHorizontal="true"
         android:hint="Message"
         android:minLines="8"
         android:maxLines="8"
         android:maxLength="140"/>
 
+    <EditText
+        android:id="@+id/topicText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:hint="Topic"
+        android:singleLine="true" />
 
     <Button
         android:layout_width="wrap_content"

@@ -3,13 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="io.ahimsa.ahimsa_app.application.MainActivity" >
 
-    <item android:id="@+id/action_peercount"
-        android:title="Peers"
+    <item android:id="@+id/action_fresh_wallet"
+        android:title="Fresh Wallet"
         android:orderInCategory="99"
         android:showAsAction="withText|always" />
 
-    <item android:id="@+id/action_nodeservice"
-        android:title="Node Service"
+
+    <item android:id="@+id/action_query_server"
+        android:title="Query Server"
         android:orderInCategory="100"
         android:showAsAction="withText|always" />
 </menu>

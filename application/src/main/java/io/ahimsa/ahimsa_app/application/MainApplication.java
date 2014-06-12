@@ -27,7 +27,7 @@ import io.ahimsa.ahimsa_app.application.service.NodeService;
  * Created by askuck on 6/9/14.
  */
 public class MainApplication extends Application {
-    private static final String TAG = MainApplication.class.toString();
+    private static final String TAG = "MainApplication";
 
     private Configuration config;
 
@@ -48,32 +48,33 @@ public class MainApplication extends Application {
         walletFile = getFileStreamPath(Constants.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
 
-        //add wallet listener for auto saving wallet on updates
-        //wallet.autosaveToFile(walletFile, 1, TimeUnit.SECONDS, new WalletAutosaveEventListener());
-        //the autosaveToFileListener must be removed before app shutdown, where should this be placed?
-        //thus you MUST remember to call save wallet after all modifications.
-
         //check if wallet has a key, create and add new key if DNE.
         ensureKey();
 
-        //check if wallet has a funded address, fund address if DNE.
+        //check if wallet has transactions, fund address if DNE.
         ensureCoin();
 
-    }
-
-    //send raw transaction via node intent service
-    public void testPeerCount(){
-        NodeService.startActionTestPeercount(this);
+        //No autosave wallet listener exists, must manually save!
+        saveWallet();
 
     }
-    //send raw transaction via node intent service
-//    public void broadcast(byte[] rawTx){
-//        NodeService.startActionBroadcast(this, rawTx);
-//
-//    }
 
+    public void queryServer(){
+    //todo: this is temporary
+        NodeService.startNetworkTest(this);
+    }
+
+    public void freshWallet(){
+    //todo: this is temporary
+        Log.d(TAG, wallet.toString());
+        wallet.clearTransactions(0);
+        saveWallet();
+        Log.d(TAG, wallet.toString());
+
+    }
     //---------------------------------------------------------------------------------
 
+    //PUBLIC METHODS-------------------------------------------------------------------
     public Configuration getConfig()
     {
         return config;
@@ -84,53 +85,79 @@ public class MainApplication extends Application {
         return wallet;
     }
 
-
-    private static final class WalletAutosaveEventListener implements WalletFiles.Listener
+    public void saveWallet()
     {
-        @Override
-        public void onBeforeAutoSave(final File file)
+        try
         {
+            protobufSerializeWallet(wallet);
         }
-
-        @Override
-        public void onAfterAutoSave(final File file)
+        catch (final IOException x)
         {
+            throw new RuntimeException(x);
         }
     }
 
-    private void ensureKey(){
+    public ECKey getDefaultECKey()
+    {
+        String defaultaddr = config.getDefaultAddress();
+
+        if( defaultaddr == null ){
+            throw new NullPointerException("Default key is null");
+        }
+
+        for(ECKey key : wallet.getKeys()){
+            if( key.toAddress(Constants.NETWORK_PARAMETERS).toString().equals(defaultaddr))
+                return key;
+        }
+
+        //todo: default key is not in wallet, throw error,
+        return null;
+
+    }
+
+    //PRIVATE METHODS-------------------------------------------------------------------
+    private void ensureKey()
+    {
         if(wallet.getKeys().size() > 0)
             return;
 
-        Log.d(TAG, "Wallet has no usable key - creating");
+        Log.d(TAG, "Wallet has no key - creating");
         addNewKeyToWallet();
     }
 
-    private void addNewKeyToWallet(){
-        wallet.addKey(new ECKey());
+    private void addNewKeyToWallet()
+    {
+        ECKey key = new ECKey();
+
+        wallet.addKey(key);
+        config.setDefaultAddress( key.toAddress(Constants.NETWORK_PARAMETERS).toString() );
+
         saveWallet();
     }
 
-    private void ensureCoin(){
+    private void ensureCoin()
+    {
 
-        //TODO: alot here, cases:
+        //TODO: a lot here, cases:
         //initial install requiring funding from server
         //funds getting low
         //used all coin (may not be zero, but functionally zero)
 
-        if( !wallet.getBalance().equals(BigInteger.ZERO) )
+//        if( !wallet.getBalance().equals(BigInteger.ZERO) )
+        if( wallet.getTransactions(true).size() > 0)
         {
-            Log.d(TAG, "Wallet has funds");
+            Log.d(TAG, "Wallet has transaction");
             return;
         }
 
         fundWallet();
     }
 
-    private void fundWallet(){
+    private void fundWallet()
+    {
         Log.d(TAG, "Requesting service to fund address");
 
-        NodeService.startActionFundWallet(this);
+        NodeService.startActionFundFreshWallet(this);
 
     }
 
@@ -191,21 +218,10 @@ public class MainApplication extends Application {
         else
         {
             wallet = new Wallet(Constants.NETWORK_PARAMETERS);
+//            wallet.allowSpendingUnconfirmedTransactions();
         }
 
 
-    }
-
-    public void saveWallet()
-    {
-        try
-        {
-            protobufSerializeWallet(wallet);
-        }
-        catch (final IOException x)
-        {
-            throw new RuntimeException(x);
-        }
     }
 
     private void protobufSerializeWallet(@Nonnull final Wallet wallet) throws IOException
@@ -216,4 +232,6 @@ public class MainApplication extends Application {
 
         Log.d(TAG, "wallet saved to: '" + walletFile + "', took " + (System.currentTimeMillis() - start) + "ms");
     }
+
+
 }

@@ -1,4 +1,4 @@
-package com.google.bitcoin.examples;
+package io.ahimsa.ahimsa_app.application.util;
 
 import com.google.bitcoin.core.*;
 import com.google.bitcoin.params.TestNet3Params;

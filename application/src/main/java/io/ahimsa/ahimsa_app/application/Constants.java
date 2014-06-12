@@ -13,10 +13,13 @@ public class Constants {
     public static final String VERSION = "alpha";
 
     public static final boolean TEST = true;
-    public static  final String MIN_TX_OUT = "0.00000546";
     public static final NetworkParameters NETWORK_PARAMETERS = TEST ? TestNet3Params.get() : MainNetParams.get();
-    private static final String FILENAME_NETWORK_SUFFIX = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? "" : "-testnet";
+    public static final Long MIN_DUST = new Long(546);
+    public static final Long MIN_FEE = new Long(10000);
 
+
+    private static final String FILENAME_NETWORK_SUFFIX = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? "" : "-testnet";
     public static final String WALLET_FILENAME_PROTOBUF = "wallet-protobuf" + FILENAME_NETWORK_SUFFIX;
+
 
 }

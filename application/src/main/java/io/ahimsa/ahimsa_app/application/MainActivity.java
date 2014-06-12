@@ -3,18 +3,13 @@ package io.ahimsa.ahimsa_app.application;
 import android.app.Activity;
 
 import android.app.ActionBar;
-import android.app.ActivityManager;
 import android.app.FragmentManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.Toast;
 
 import io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment;
 import io.ahimsa.ahimsa_app.application.service.OldNodeService;
@@ -28,7 +23,7 @@ public class MainActivity extends Activity
     //TODO: convert fragment broadcast tx from oldnodeservice to nodeservice
 
     //MainActivity-------------------------------------------
-    private static final String TAG = MainActivity.class.toString();
+    private static final String TAG = "MainActivity";
     private MainApplication application;
 
     //NavDrawer----------------------------------------------
@@ -37,8 +32,6 @@ public class MainActivity extends Activity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, ".onCreate()");
-
         super.onCreate(savedInstanceState);
 
         //Get application
@@ -59,13 +52,13 @@ public class MainActivity extends Activity
         //Set up intent for fragment receiver-----------------------------------
         final IntentFilter intentFilter_fragment = new IntentFilter();
         intentFilter_fragment.addAction(OldNodeService.ACTION_BROADCAST_TRANSACTION);
-        registerReceiver(fragmentReceiver, intentFilter_fragment);
+//        registerReceiver(fragmentReceiver, intentFilter_fragment);
 
     }
 
     @Override
     protected void onDestroy(){
-        unregisterReceiver(fragmentReceiver);
+//        unregisterReceiver(fragmentReceiver);
         super.onDestroy();
     }
 
@@ -96,15 +89,12 @@ public class MainActivity extends Activity
                 .commit();
     }
 
-
-
     public void restoreActionBar() {
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -119,64 +109,47 @@ public class MainActivity extends Activity
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_nodeservice) {
-            Log.d(TAG, "Node Service Toggle");
-            testNodeService();
+        if (id == R.id.action_query_server) {
+            Log.d(TAG, "Query Server");
+            queryServer();
+            return true;
+        }
+        else if (id == R.id.action_fresh_wallet) {
+            Log.d(TAG, "Fresh wallet");
+            freshWallet();
             return true;
         }
 
-        if (id == R.id.action_peercount) {
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
 
 
     //Receiver to communicate with fragment------------------
-    private final BroadcastReceiver fragmentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action != null) {
-                if (OldNodeService.ACTION_BROADCAST_TRANSACTION.equals(action)){
-                    broadcastTx(intent);
-                }
-            }
-        }
-    };
+//    private final BroadcastReceiver fragmentReceiver = new BroadcastReceiver() {
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            String action = intent.getAction();
+//            if (action != null) {
+//
+//
+//
+//            }
+//        }
+//    };
 
     //-------------------------------------------------------
 
     //start node service
-    private void testNodeService(){
-        application.testPeerCount();
+    private void queryServer(){
+        application.queryServer();
     }
 
-    //send byte array to node service for broadcast
-    private void broadcastTx(Intent intent_from_fragment){
-        final String tx_hex_string = intent_from_fragment.getStringExtra(OldNodeService.HEX_STRING_TRANSACTION);
-
-        Intent intent_to_NodeService = new Intent(this, OldNodeService.class);
-        intent_to_NodeService.setAction(OldNodeService.ACTION_BROADCAST_TRANSACTION);
-
-        intent_to_NodeService.putExtra(OldNodeService.BYTE_ARRAY_TRANSACTION, hexStringToByteArray(tx_hex_string));
-
-        startService(intent_to_NodeService);
+    private void freshWallet(){
+        application.freshWallet();
     }
 
     //-------------------------------------------------------
-
-    //good utility method. hex string to byte array. eventually will live within message library.
-    private static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
-    }
 
 
 

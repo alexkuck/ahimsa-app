@@ -25,11 +25,6 @@
         </activity>
 
         <service
-            android:name="io.ahimsa.ahimsa_app.application.service.BootlegNodeService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
-        <service
             android:name="io.ahimsa.ahimsa_app.application.service.OldNodeService"
             android:enabled="true"
             android:exported="false" >
