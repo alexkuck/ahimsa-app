@@ -3,6 +3,7 @@ package io.ahimsa.ahimsa_app.application;
 import android.app.Activity;
 
 import android.app.ActionBar;
+import android.app.Application;
 import android.app.FragmentManager;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -14,13 +15,11 @@ import android.support.v4.widget.DrawerLayout;
 import io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment;
 import io.ahimsa.ahimsa_app.application.service.OldNodeService;
 import io.ahimsa.ahimsa_app.application.fragment.BulletinFragment;
+import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
 
 
 public class MainActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
-
-
-    //TODO: convert fragment broadcast tx from oldnodeservice to nodeservice
 
     //MainActivity-------------------------------------------
     private static final String TAG = "MainActivity";
@@ -48,25 +47,11 @@ public class MainActivity extends Activity
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
 
-
-        //Set up intent for fragment receiver-----------------------------------
-        final IntentFilter intentFilter_fragment = new IntentFilter();
-        intentFilter_fragment.addAction(OldNodeService.ACTION_BROADCAST_TRANSACTION);
-//        registerReceiver(fragmentReceiver, intentFilter_fragment);
-
-    }
-
-    @Override
-    protected void onDestroy(){
-//        unregisterReceiver(fragmentReceiver);
-        super.onDestroy();
     }
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragment
         FragmentManager fragmentManager = getFragmentManager();
-        Log.d(TAG, "Position: " + position);
 
         switch (position){
             case 1:
@@ -89,17 +74,10 @@ public class MainActivity extends Activity
                 .commit();
     }
 
-    public void restoreActionBar() {
-        ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
-    }
-
+    //todo: you may not need this:
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-//        restoreActionBar();
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -109,14 +87,12 @@ public class MainActivity extends Activity
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_query_server) {
-            Log.d(TAG, "Query Server");
-            queryServer();
+        if (id == R.id.action_util_one) {
+            printWallet();
             return true;
         }
-        else if (id == R.id.action_fresh_wallet) {
-            Log.d(TAG, "Fresh wallet");
-            freshWallet();
+        else if (id == R.id.action_util_two) {
+            resetWallet();
             return true;
         }
 
@@ -124,29 +100,16 @@ public class MainActivity extends Activity
         return super.onOptionsItemSelected(item);
     }
 
-
-    //Receiver to communicate with fragment------------------
-//    private final BroadcastReceiver fragmentReceiver = new BroadcastReceiver() {
-//        @Override
-//        public void onReceive(Context context, Intent intent) {
-//            String action = intent.getAction();
-//            if (action != null) {
-//
-//
-//
-//            }
-//        }
-//    };
-
     //-------------------------------------------------------
 
     //start node service
-    private void queryServer(){
-        application.queryServer();
+    private void printWallet(){
+        Log.d(TAG, application.getAhimsaWallet().toString());
+        Log.d(TAG, "DB BALANCE: " + application.getAhimsaWallet().getBalance().toString());
     }
 
-    private void freshWallet(){
-        application.freshWallet();
+    private void resetWallet(){
+//        application.getAhimsaWallet().makeFresh();
     }
 
     //-------------------------------------------------------

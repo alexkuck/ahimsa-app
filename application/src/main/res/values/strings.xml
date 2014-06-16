@@ -4,18 +4,14 @@
     <string name="app_name">ahimsa-app</string>
 
     <string name="title_section1">Create Bulletin</string>
-    <string name="title_section2">Previous Bulletins</string>
+    <string name="title_section2">Past Bulletins</string>
     <string name="title_section3">Wallet</string>
     <string name="title_section4">Settings</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="action_example">Example action</string>
-    <string name="action_query_server">Query Server</string>
-    <string name="action_fresh_wallet">Fresh Wallet</string>
 
-    <string name="action_settings">Settings</string>
-
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="action_util_one">Print Wallet</string>
+    <string name="action_util_two">Reset Wallet</string>
 
 </resources>

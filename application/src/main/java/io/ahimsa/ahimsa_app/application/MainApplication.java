@@ -1,12 +1,18 @@
 package io.ahimsa.ahimsa_app.application;
 
 import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
+import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.store.UnreadableWalletException;
 import com.google.bitcoin.store.WalletProtobufSerializer;
@@ -22,70 +28,120 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import io.ahimsa.ahimsa_app.application.service.NodeService;
+import io.ahimsa.ahimsa_app.application.util.AhimsaDB;
+import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
+import io.ahimsa.ahimsa_app.application.util.BootlegTransaction;
+import io.ahimsa.ahimsa_app.application.util.Utils;
 
 /**
  * Created by askuck on 6/9/14.
  */
 public class MainApplication extends Application {
     private static final String TAG = "MainApplication";
+    //----------------------------------------------------------------------------------------
+    //Receiver Actions
+    public static final String ACTION_HTTPS_SUCCESS  = MainApplication.class.getPackage().getName() + "https_success";
+    public static final String EXTRA_TX_HEX_STRING   = MainApplication.class.getPackage().getName() + "tx_hex_string";
+    public static final String EXTRA_TX_IN_COIN      = MainApplication.class.getPackage().getName() + "tx_in_coin";
 
-    private Configuration config;
+    public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
+    public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "tx_in_coin";
 
-    private File walletFile;
-    private Wallet wallet;
-    private PackageInfo packageInfo;
+    //----------------------------------------------------------------------------------------
 
+    AhimsaWallet ahimwall;
+    Wallet wallet;
+    Configuration config;
+    AhimsaDB db;
+    File walletFile;
 
     @Override
-    public void onCreate(){
-
+    public void onCreate()
+    {
         super.onCreate();
 
-        //TODO: use the configuration file
-        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
+        //register receiver
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_HTTPS_SUCCESS);
+        intentFilter.addAction(ACTION_HTTPS_FAILURE);
+        registerReceiver(serviceReceiver, intentFilter);
 
-        //get wallet file name and load wallet. create new wallet if DNE.
+        //initialize wallet
         walletFile = getFileStreamPath(Constants.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
 
-        //check if wallet has a key, create and add new key if DNE.
-        ensureKey();
+        //initialize config and database
+        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
+        db = new AhimsaDB(this);
 
-        //check if wallet has transactions, fund address if DNE.
-        ensureCoin();
 
-        //No autosave wallet listener exists, must manually save!
-        saveWallet();
-
-    }
-
-    public void queryServer(){
-    //todo: this is temporary
-        NodeService.startNetworkTest(this);
-    }
-
-    public void freshWallet(){
-    //todo: this is temporary
-        Log.d(TAG, wallet.toString());
-        wallet.clearTransactions(0);
-        saveWallet();
-        Log.d(TAG, wallet.toString());
+        //initialize ahimsawallet
+        ahimwall = new AhimsaWallet(this, wallet, db, config);
 
     }
-    //---------------------------------------------------------------------------------
 
-    //PUBLIC METHODS-------------------------------------------------------------------
+    //todo: low memory / shutdown handle
+
+    //--------------------------------------------------------------------------------
+    private final BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (ACTION_HTTPS_SUCCESS.equals(action)) {
+                    String funded_tx = intent.getStringExtra(EXTRA_TX_HEX_STRING);
+                    Long in_coin = intent.getLongExtra(EXTRA_TX_IN_COIN, 0);
+                    successOnHttps(funded_tx, in_coin);
+                }
+                else if (ACTION_HTTPS_FAILURE.equals(action)) {
+                    String e = intent.getStringExtra(EXTRA_EXCEPTION);
+                    failureOnHttps(e);
+                }
+            }
+        }
+    };
+
+    private void successOnHttps(String funded_tx, Long in_coin){
+
+        Log.d(TAG, "funded_tx: " + funded_tx);
+        Log.d(TAG, "  in_coin: " + in_coin);
+
+        BootlegTransaction bootlegTx = new BootlegTransaction(Constants.NETWORK_PARAMETERS, Utils.hexToBytes(funded_tx));
+        ECKey defKey = ahimwall.getDefaultECKey();
+        BigInteger toSelf = Utils.satoshiToSelf(bootlegTx, in_coin, config.getFeeValue());
+
+        TransactionOutput tout = new TransactionOutput(Constants.NETWORK_PARAMETERS, bootlegTx, toSelf, defKey.toAddress(Constants.NETWORK_PARAMETERS));
+        bootlegTx.modifyOutput(1, tout);
+
+        ahimwall.broadcastFundingTx(bootlegTx.toTransaction());
+    }
+
+    private void failureOnHttps(String e){
+        Toast.makeText(this, "Uh oh! It seams the funding server is down: " + e, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "But do not fear, funding reattempt will occur upon app restart.", Toast.LENGTH_LONG).show();
+    }
+
+
+    //--------------------------------------------------------------------------------
+    //PUBLIC METHODS------------------------------------------------------------------
     public Configuration getConfig()
     {
         return config;
     }
 
-    public Wallet getWallet()
+    public AhimsaWallet getAhimsaWallet()
     {
-        return wallet;
+        return ahimwall;
     }
 
-    public void saveWallet()
+    public void broadcastBulletin(String topic, String message)
+    {
+        ahimwall.broadcastBulletin(topic, message);
+    }
+
+    //--------------------------------------------------------------------------------
+    //Load/Save Wallet----------------------------------------------------------------
+    public void save()
     {
         try
         {
@@ -95,70 +151,6 @@ public class MainApplication extends Application {
         {
             throw new RuntimeException(x);
         }
-    }
-
-    public ECKey getDefaultECKey()
-    {
-        String defaultaddr = config.getDefaultAddress();
-
-        if( defaultaddr == null ){
-            throw new NullPointerException("Default key is null");
-        }
-
-        for(ECKey key : wallet.getKeys()){
-            if( key.toAddress(Constants.NETWORK_PARAMETERS).toString().equals(defaultaddr))
-                return key;
-        }
-
-        //todo: default key is not in wallet, throw error,
-        return null;
-
-    }
-
-    //PRIVATE METHODS-------------------------------------------------------------------
-    private void ensureKey()
-    {
-        if(wallet.getKeys().size() > 0)
-            return;
-
-        Log.d(TAG, "Wallet has no key - creating");
-        addNewKeyToWallet();
-    }
-
-    private void addNewKeyToWallet()
-    {
-        ECKey key = new ECKey();
-
-        wallet.addKey(key);
-        config.setDefaultAddress( key.toAddress(Constants.NETWORK_PARAMETERS).toString() );
-
-        saveWallet();
-    }
-
-    private void ensureCoin()
-    {
-
-        //TODO: a lot here, cases:
-        //initial install requiring funding from server
-        //funds getting low
-        //used all coin (may not be zero, but functionally zero)
-
-//        if( !wallet.getBalance().equals(BigInteger.ZERO) )
-        if( wallet.getTransactions(true).size() > 0)
-        {
-            Log.d(TAG, "Wallet has transaction");
-            return;
-        }
-
-        fundWallet();
-    }
-
-    private void fundWallet()
-    {
-        Log.d(TAG, "Requesting service to fund address");
-
-        NodeService.startActionFundFreshWallet(this);
-
     }
 
     private void loadWalletFromProtobuf()
@@ -179,15 +171,13 @@ public class MainApplication extends Application {
             catch (final FileNotFoundException x)
             {
                 Log.e(TAG, "problem loading wallet", x);
-                Toast.makeText(MainApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-
+//                Toast.makeText(MainApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
 //                wallet = restoreWalletFromBackup();
             }
             catch (final UnreadableWalletException x)
             {
                 Log.e(TAG, "problem loading wallet", x);
-                Toast.makeText(MainApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-
+//                Toast.makeText(MainApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
 //                wallet = restoreWalletFromBackup();
             }
             finally
@@ -207,8 +197,8 @@ public class MainApplication extends Application {
 
             if (!wallet.isConsistent())
             {
-                Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
-
+                Log.d(TAG, "problem loading wallet");
+//                Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
 //                wallet = restoreWalletFromBackup();
             }
 
@@ -233,5 +223,5 @@ public class MainApplication extends Application {
         Log.d(TAG, "wallet saved to: '" + walletFile + "', took " + (System.currentTimeMillis() - start) + "ms");
     }
 
-
 }
+

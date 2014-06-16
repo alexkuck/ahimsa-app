@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="io.ahimsa.ahimsa_app.application.MainApplication"
@@ -32,6 +33,10 @@
         <service
             android:name="io.ahimsa.ahimsa_app.application.service.NodeService"
             android:enabled="true"
+            android:exported="false" >
+        </service>
+        <service
+            android:name="io.ahimsa.ahimsa_app.application.service.FundingService"
             android:exported="false" >
         </service>
     </application>

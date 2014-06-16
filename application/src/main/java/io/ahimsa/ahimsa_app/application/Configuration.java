@@ -1,7 +1,6 @@
 package io.ahimsa.ahimsa_app.application;
 
 import android.content.SharedPreferences;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -9,13 +8,17 @@ import javax.annotation.Nonnull;
  */
 public class Configuration {
 
-    public static final String TAG = "configuration";
-    public static final String PREF_KEY_IS_CONFIGURED = "configured";
+    public static final String PREF_KEY_IS_FUNDED = "funded";
+    public static final String PREF_KEY_FUNDING_IP = "funding_ip";
 
+    public static final String PREF_KEY_TRUSTED_PEER = "trusted_peer";
     public static final String PREF_KEY_MAX_PEERS = "max_connected_peers";
     public static final String PREF_KEY_MIN_PEERS = "min_connected_peers";
+
+    public static final String PREF_KEY_MIN_TIMEOUT = "minimum_timeout";
     public static final String PREF_KEY_DUST_VALUE = "dust_value";
     public static final String PREF_KEY_FEE_VALUE = "fee_value";
+
     public static final String PREF_KEY_HIGHEST_BLOCK_SEEN = "highest_block_seen";
     public static final String PREF_KEY_DEFAULT_ADDRESS = "default_address";
 
@@ -27,40 +30,75 @@ public class Configuration {
         this.prefs = prefs;
     }
 
-    public int getMaxConnectedPeers(){
+
+    public boolean  getIsFunded(){
+        return prefs.getBoolean(PREF_KEY_IS_FUNDED, false);
+    }
+    public void     setIsFunded(Boolean x){
+        prefs.edit().putBoolean(PREF_KEY_MIN_PEERS, x).commit();
+    }
+
+    public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, "https://ahimsa.io:1050");}
+    public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x);}
+
+    public String   getTrustedPeer() {return prefs.getString(PREF_KEY_TRUSTED_PEER, "");}
+    public void     setTrustedPeer(String x) {prefs.edit().putString(PREF_KEY_TRUSTED_PEER, x);}
+
+    public int      getMaxConnectedPeers(){
         return prefs.getInt(PREF_KEY_MAX_PEERS, 6);
     }
+    public void     setMaxConnectedPeers(int x) {
+        prefs.edit().putInt(PREF_KEY_MAX_PEERS, x).commit();
+    }
 
-    public int getMinConnectedPeers(){
+    public int      getMinConnectedPeers(){
         return prefs.getInt(PREF_KEY_MIN_PEERS, 6);
     }
+    public void     setMinConnectedPeers(int x) {
+        prefs.edit().putInt(PREF_KEY_MIN_PEERS, x).commit();
+    }
 
-    public Long getDustValue(){
+    public Long     getDustValue() {
         return prefs.getLong(PREF_KEY_DUST_VALUE, Constants.MIN_DUST);
     }
+    public void     setDustValue(long x) {
+        prefs.edit().putLong(PREF_KEY_DUST_VALUE, x).commit();
+    }
 
-    public Long getFeeValue(){
+    public Long     getFeeValue(){
         return prefs.getLong(PREF_KEY_FEE_VALUE, Constants.MIN_FEE);
     }
-
-    public int getHighestBlockSeen(){
-        return prefs.getInt(PREF_KEY_HIGHEST_BLOCK_SEEN, 0);
+    public void     setFeeValue(long x) {
+        prefs.edit().putLong(PREF_KEY_FEE_VALUE, x).commit();
     }
 
-    public void setHighestBlockSeen(int blk){
+    public int      getHighestBlockSeen(){
+        return prefs.getInt(PREF_KEY_HIGHEST_BLOCK_SEEN, -1);
+    }
+    public void     setHighestBlockSeen(int blk) {
         prefs.edit().putInt(PREF_KEY_HIGHEST_BLOCK_SEEN, blk).commit();
     }
 
-    public String getDefaultAddress(){
+    public String   getDefaultAddress(){
         return prefs.getString(PREF_KEY_DEFAULT_ADDRESS, null);
     }
-
-    public void setDefaultAddress(String addr){
+    public void     setDefaultAddress(String addr) {
         prefs.edit().putString(PREF_KEY_DEFAULT_ADDRESS, addr).commit();
     }
 
+    public int      getMinTimeout(){
+        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 10);
+    }
+    public void     setMinTimeout(int time) {
+        prefs.edit().putInt(PREF_KEY_MIN_TIMEOUT, time).commit();
+    }
 
+    public void     reset() {
+        boolean funded = getIsFunded();
+        prefs.edit().clear();
 
+        setIsFunded(funded);
+    }
 
 
 }
