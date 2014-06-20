@@ -17,6 +17,8 @@
         android:layout_centerHorizontal="true"
         android:hint="Topic"
         android:singleLine="true"
+
+        android:text="Carl Sagan"
         />
 
     <EditText
@@ -32,6 +34,8 @@
         android:inputType="textMultiLine"
         android:ems="25"
         android:layout_centerHorizontal="true"
+
+        android:text="We make our world significant by the courage of our questions and the depth of our answers."
         />
 
 

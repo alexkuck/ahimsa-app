@@ -63,7 +63,7 @@ public class BulletinFragment extends Fragment {
     }
 
     public void broadcastBulletin(String message, String topic){
-        ahimwall.broadcastBulletin(message, topic);
+        ahimwall.broadcastBulletin(topic, message);
     }
 
 

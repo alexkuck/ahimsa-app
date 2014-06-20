@@ -104,12 +104,11 @@ public class MainActivity extends Activity
 
     //start node service
     private void printWallet(){
-        Log.d(TAG, application.getAhimsaWallet().toString());
-        Log.d(TAG, "DB BALANCE: " + application.getAhimsaWallet().getBalance().toString());
+        application.getAhimsaWallet().toLog();
     }
 
     private void resetWallet(){
-//        application.getAhimsaWallet().makeFresh();
+        application.getAhimsaWallet().reset();
     }
 
     //-------------------------------------------------------

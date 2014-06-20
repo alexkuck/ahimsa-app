@@ -21,9 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nonnull;
 
@@ -31,7 +29,6 @@ import io.ahimsa.ahimsa_app.application.Configuration;
 import io.ahimsa.ahimsa_app.application.Constants;
 import io.ahimsa.ahimsa_app.application.MainApplication;
 
-import io.ahimsa.ahimsa_app.application.util.BootlegTransaction;
 import io.ahimsa.ahimsa_app.application.util.Utils;
 
 /**
@@ -49,8 +46,8 @@ public class NodeService extends IntentService {
     private PowerManager.WakeLock wakeLock;
     private PeerGroup peerGroup;
 
-    private int maxConnectedPeers;
     private int minConnectedPeers;
+    private int maxConnectedPeers;
     private String trustedPeerHost;
 
 
@@ -81,7 +78,7 @@ public class NodeService extends IntentService {
         config = application.getConfig();
 
         minConnectedPeers = config.getMinConnectedPeers();
-        maxConnectedPeers = config.getMinConnectedPeers();
+        maxConnectedPeers = config.getMaxConnectedPeers();
         trustedPeerHost   = config.getTrustedPeer();
 
     }
@@ -150,6 +147,7 @@ public class NodeService extends IntentService {
                     }
                 });
 
+                //todo: bloomandwait
                 peerGroup.startAndWait();
                 //TODO: let application know timeout occurred
                 peerGroup.waitForPeers(minConnectedPeers).get(config.getMinTimeout(), TimeUnit.SECONDS);
@@ -179,20 +177,37 @@ public class NodeService extends IntentService {
 
     private void broadcastTx(byte[] tx)
     {
-        Log.d(TAG, "Broadcasting Transaction: " + Utils.bytesToHex(tx)  );
+        Log.d(TAG, "Broadcasting transaction: " + Utils.bytesToHex(tx)  );
 
         ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx), minConnectedPeers);
 
         try {
             future.get(config.getMinTimeout(), TimeUnit.SECONDS);
-            Log.d(TAG, "Future succes, txid: " + future.get().toString());
-        } catch (InterruptedException e) {
+            Log.d(TAG, "Received future, success:" + future.get().toString());
+
+            Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_SUCCESS);
+            intent.putExtra(application.EXTRA_TX_FUTURE, future.get().bitcoinSerialize());
+            application.sendBroadcast(intent);
+
+        } catch (Exception e){
+            Log.d(TAG, "Did not receive future, failure:" + e.toString());
+
             e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
+
+            Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_FAILURE);
+            intent.putExtra(application.EXTRA_TX_BYTES, tx);
+            intent.putExtra(application.EXTRA_EXCEPTION, e.toString());
+            application.sendBroadcast(intent);
         }
+//        catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        } catch (TimeoutException e) {
+//            e.printStackTrace();
+//        }
+
+
 
     }
 
@@ -224,6 +239,19 @@ public class NodeService extends IntentService {
 
     //--------------------------------------------------------------------------------
     //Public start action methods
+
+    public static void startActionBroadcastTx(@Nonnull Context context, @Nonnull byte[] tx)
+    {
+        Intent intent = new Intent(context, NodeService.class);
+        intent.setAction(ACTION_BROADCAST_TX);
+        intent.putExtra(EXTRA_TX, tx);
+        context.startService(intent);
+    }
+
+//    public static void startActionSyncBlockchain(@Nonnull Context context, @Nonnull ){
+//
+//    }
+
     public static void startNetworkTest(@Nonnull Context context)
     {
         Intent intent = new Intent(context, NodeService.class);
@@ -231,13 +259,8 @@ public class NodeService extends IntentService {
         context.startService(intent);
     }
 
-    public static void startActionBroadcastTx(@Nonnull Context context, byte[] tx)
-    {
-        Intent intent = new Intent(context, NodeService.class);
-        intent.setAction(ACTION_BROADCAST_TX);
-        intent.putExtra(EXTRA_TX, tx);
-        context.startService(intent);
-    }
+
+
     //--------------------------------------------------------------------------------
     //Handle intents
     protected void onHandleIntent(Intent intent){

@@ -36,7 +36,7 @@
             android:exported="false" >
         </service>
         <service
-            android:name="io.ahimsa.ahimsa_app.application.service.FundingService"
+            android:name=".service.AnonFundService"
             android:exported="false" >
         </service>
     </application>

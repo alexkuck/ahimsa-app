@@ -13,6 +13,23 @@ import io.ahimsa.ahimsa_app.application.Constants;
  */
 public class Utils {
 
+    public static class DbTxOutpoint{
+        public final String txid;
+        public final int vout;
+        public final BigInteger value;
+        public Transaction tx;
+
+        public DbTxOutpoint(String txid, int vout, long value){
+            this.txid = txid;
+            this.vout = vout;
+            this.value = BigInteger.valueOf(value);
+        }
+
+        public String toString(){
+            return String.format("[txid: %s | vout: %d | value: %s | Transaction: %s]", txid, vout, value.toString(), (tx != null));
+        }
+    }
+
     public static ECKey importKey(String privkey) throws Exception {
         //only accepts a very specific type of address. from dumpprivkey functionality in Bitcoin core.
         DumpedPrivateKey dump = new DumpedPrivateKey(Constants.NETWORK_PARAMETERS, privkey);
@@ -56,6 +73,25 @@ public class Utils {
         return in.subtract(out).subtract(fee);
     }
 
+//    private void printArray(byte[] array){
+//        for(int i = 0; i < array.length; i++){
+//            System.out.print(array[i]+"|");
+//        }
+//
+//    }
+//
+//    private byte[] sliceArray(byte[] array, int begin, int end){
+//        byte[] result = new byte[end - begin];
+//        int c = 0;
+//
+//        for(int i = begin; i < end; i++){
+//            result[c] = array[i];
+//            System.out.println(result[c]);
+//            c++;
+//        }
+//
+//        return result;
+//    }
 
 
 }

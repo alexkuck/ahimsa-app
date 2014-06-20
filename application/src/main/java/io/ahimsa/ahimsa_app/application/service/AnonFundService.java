@@ -30,20 +30,20 @@ import io.ahimsa.ahimsa_app.application.MainApplication;
 import io.ahimsa.ahimsa_app.application.R;
 
 
-public class FundingService extends IntentService {
-    private static final String TAG = "NodeService";
+public class AnonFundService extends IntentService {
+    private static final String TAG = "AnonFundService";
 
     //Requets Funded Transaction
     private static final String ACTION_REQUEST_FUNDED_TX = NodeService.class.getPackage().getName() + ".request_funded_tx";
     private static final String EXTRA_URL = NodeService.class.getPackage().getName() + ".url";
 
     //--------------------------------------------------------------------------------
-    public FundingService() {
-        super("FundingService");
+    public AnonFundService() {
+        super("AnonFundService");
     }
     //--------------------------------------------------------------------------------
     public static void startActionRequestFundedTx(Context context, String url) {
-        Intent intent = new Intent(context, FundingService.class);
+        Intent intent = new Intent(context, AnonFundService.class);
         intent.setAction(ACTION_REQUEST_FUNDED_TX);
         intent.putExtra(EXTRA_URL, url);
         context.startService(intent);
@@ -100,7 +100,10 @@ public class FundingService extends IntentService {
             try {
                 ca = cf.generateCertificate(caInput);
                 Log.d(TAG, "0/8|Certificate: " + ((X509Certificate) ca).getSubjectDN());
-            } finally {
+            }catch(Exception x){
+                Log.d(TAG, "Exception in certificate generation: " + x.toString());
+                throw x;
+            }finally {
                 caInput.close();
             }
 
@@ -162,7 +165,6 @@ public class FundingService extends IntentService {
             outStream.flush();
 
             Log.d(TAG, "6/8|Read input stream...");
-            //do something with response
             InputStream inStream = conn.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "UTF-8"));
             String result = reader.readLine();

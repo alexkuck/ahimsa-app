@@ -1,20 +1,21 @@
 package io.ahimsa.ahimsa_app.application.util;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.core.Transaction;
+import com.google.bitcoin.core.TransactionInput;
+import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Wallet;
 
 import java.math.BigInteger;
-
-import javax.annotation.Nonnull;
+import java.util.List;
 
 import io.ahimsa.ahimsa_app.application.Configuration;
 import io.ahimsa.ahimsa_app.application.Constants;
 import io.ahimsa.ahimsa_app.application.MainApplication;
-import io.ahimsa.ahimsa_app.application.service.FundingService;
+import io.ahimsa.ahimsa_app.application.service.AnonFundService;
 import io.ahimsa.ahimsa_app.application.service.NodeService;
 
 /**
@@ -93,18 +94,20 @@ public class AhimsaWallet {
 
     }
 
-
     //---------------------------------------------------------------------------
     private boolean isConsistent()
     {
         //todo: something
         boolean a = wallet.isConsistent();
+        boolean b = true;
+        boolean c = true;
 
-        return a;
+        return a && b && c;
     }
 
-    private void reset()
+    public void reset()
     {
+        Log.d(TAG, "Reseting wallet.");
         //clear wallet of transactions and keys
         wallet.clearTransactions(0);
         for(ECKey key : wallet.getKeys()){
@@ -116,7 +119,9 @@ public class AhimsaWallet {
         config.reset();
 
         //clear database
-        //todo: database reset
+        db.reset();
+
+        Log.d(TAG, toString());
 
         //return to initiate()
         initiate();
@@ -143,7 +148,7 @@ public class AhimsaWallet {
 
     private void requestFunding()
     {
-        FundingService.startActionRequestFundedTx(application, config.getFundingIP());
+        AnonFundService.startActionRequestFundedTx(application, config.getFundingIP());
     }
 
     private void noBalance(){
@@ -156,32 +161,140 @@ public class AhimsaWallet {
     //The Big Honkers------------------------------------------------------------
     public void broadcastBulletin(String topic, String message)
     {
-//        BulletinBuilder.createByteTX()
-//        NodeService.startActionBroadcastTx(context, );
-    }
+        Log.d(TAG, String.format("Topic: %s | Message: %s", topic, message));
 
-    public void broadcastFundingTx(Transaction tx)
-    {
-        NodeService.startActionBroadcastTx(application, tx.bitcoinSerialize());
-        wallet.commitTx(tx);
-        Log.d(TAG, "I do not believed this worked." + toString());
-        Log.d(TAG, wallet.getBalance().toString());
+        //get all unspent transactions from ahimsa's sqlite database
+        List<Utils.DbTxOutpoint> db_unspent = db.getUnspent();
+
+        //todo: make this it's own function
+        // associate transactions from the wallet to each outpointTx
+        for(Utils.DbTxOutpoint out : db_unspent){
+            Transaction tx = wallet.getTransaction(new Sha256Hash(out.txid));
+            if(tx != null)
+                out.tx = tx;
+            //todo: wallet/db not in sync, must reset !!! (check for consistency before these actions?)
+        }
+
+        Log.d(TAG, "outPointsList: " + db_unspent);
         try {
-            db.addTx(tx.getHash().toString(), 1, BigInteger.ONE, "distributed", false);
-
+            Transaction bulletin = BulletinBuilder.createTx(config, wallet, db_unspent, message, topic);
+            Log.d(TAG, "BULLETIN BULLETIN BULLETIN: " + Utils.bytesToHex(bulletin.bitcoinSerialize()));
+            commitTx(bulletin);
+            NodeService.startActionBroadcastTx(application, bulletin.bitcoinSerialize());
         } catch (Exception e) {
+            Log.d(TAG, "Unsuccessful attempt at creating bulletin: " + e.toString());
             e.printStackTrace();
         }
+        //todo todo todo todo todo todo todo todo
+        //todo: commitTx / addTx to database method
+
+    }
+
+    public void broadcastFundingTx(Transaction tx) throws Exception
+    {
+        //add transaction to wallet and its' outpoints to db
+        commitTx(tx);
+
+        //add funding txid to configuration but DO NOT switch funded flag
+        //this txid in config will be overwritten if unsuccessful broadcast
+        //todo: handle transactions that were not broadcasted
+        config.setFundingTxid(tx.getHash().toString());
+
+        //broadcast transaction. if future successful, change pending flag to distributed
+        NodeService.startActionBroadcastTx(application, tx.bitcoinSerialize());
+
+    }
+
+    public void successOnBroadcastTx(Transaction future){
+
+        //change pending flag of the future transaction in AhimsaDb to successfully distributed
+        String txid = future.getHashAsString();
+        Log.d(TAG, "succesOnBroadcastTx() | txid: " + txid);
+        try{
+            db.setStatus(txid, AhimsaDB.DISTRIBUTED);
+            Log.d(TAG, "Change tx status from to 'distributed' | " + txid);
+        }catch(Exception x){
+            //todo: handle
+            x.printStackTrace();
+            throw new RuntimeException("womp something went wrong. a future txid was returned that DNE in ahimsadb");
+        }
+
+        //change the spent flag of transactions used to fund the future transaction
+        for(TransactionInput in : future.getInputs()){
+            String outpoint_txid = in.getOutpoint().getHash().toString();
+            Log.d(TAG, "succesOnBroadcastTx() | outpoint_txid: " + outpoint_txid);
+            try{
+                db.setSpent(outpoint_txid, true);
+            }catch (Exception x){
+                //todo: handle
+                x.printStackTrace();
+                throw new RuntimeException("womp something went wrong. a future txid was returned that DNE in ahimsadb");
+            }
+        }
+
+        //check if txid was the funding transaction, set flag to true if so.
+        if(config.getFundingTxid().equals(txid)){
+            config.setIsFunded(true);
+            Log.d(TAG, "getIsFunded() | " + config.getIsFunded());
+        }
+        Log.d(TAG, "Successful broadcast.");
     }
 
     //todo: informFundingTx()
 
+    //----------------------------------------------------------------------------
+    private void commitTx(Transaction tx){
+
+        //add all transactions to wallet
+        wallet.commitTx(tx);
+        save();
+
+        //AhimsaDB has the official record of transactions to spend
+        for(TransactionOutput out : tx.getOutputs()){
+            if(out.isMine(wallet)){
+                try {
+                    db.addTx(tx.getHash().toString(), tx.getOutputs().indexOf(out), out.getValue(), AhimsaDB.PENDING, false);
+                } catch (Exception e) {
+                    Log.d(TAG, "addTx within the ahimsaDB threw an error");
+                    //todo: handle
+                }
+            }
+        }
+
+    }
+
 
     //Public Methods--------------------------------------------------------------
+    public void toLog(){
+        String wallet = toString();
+
+        if (wallet.length() > 4000) {
+            int sections = wallet.length() / 4000;
+            for (int i = 0; i <= sections; i++) {
+                int max = 4000 * (i + 1);
+                if (max >= wallet.length()) {
+                    Log.d(TAG, "Section| " + i + "/" + sections + "\n" + wallet.substring(4000 * i));
+                } else {
+                    Log.d(TAG, "Section| " + i + "/" + sections + "\n" + wallet.substring(4000 * i, max));
+                }
+            }
+        }
+    }
+
     @Override
     public String toString()
     {
-        return wallet.toString();
+        String  a  =  "\n--------------------AhimsaWallet--------------------\n";
+                a +=  wallet.toString() + "\n";
+                a +=  "----------------------Database----------------------\n";
+                a +=  db.toString() + "\n";
+                a +=  "----------------------------------------------------\n";
+                a +=  "DB_BALANCE: " + db.getBalance().toString() + "\n";
+                a +=  "CONFIG_IS_FUNDED: " + config.getIsFunded() + "\n";
+                a +=  "DEFAULT_KEY: " + config.getDefaultAddress() + "\n";
+                a +=  "----------------------------------------------------\n";
+
+        return a;
     }
 
     public void save()
@@ -225,9 +338,6 @@ public class AhimsaWallet {
 
         return true;
     }
-
-
-
 
 
 }

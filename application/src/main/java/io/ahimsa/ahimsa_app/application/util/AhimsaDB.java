@@ -2,11 +2,13 @@ package io.ahimsa.ahimsa_app.application.util;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.ahimsa.ahimsa_app.application.MainApplication;
 
@@ -14,6 +16,10 @@ import io.ahimsa.ahimsa_app.application.MainApplication;
  * Created by askuck on 6/16/14.
  */
 public class AhimsaDB {
+
+    public static final String PENDING = "pending";
+    public static final String DISTRIBUTED = "distributed";
+    public static final String CONFIRMED = "confirmed";
 
     private static final String db_name = "ahimsa.db";
     private static final String db_table = "wallet_outpoints";
@@ -27,6 +33,10 @@ public class AhimsaDB {
 
     public AhimsaDB(MainApplication _application){
         this.application = _application;
+        initialize();
+    }
+
+    private void initialize(){
         db = application.openOrCreateDatabase(db_name, Context.MODE_PRIVATE, null);
         db.execSQL(CREATE);
     }
@@ -42,30 +52,42 @@ public class AhimsaDB {
                 db_table, txid, vout, value.longValue(), status, (spent) ? 1 : 0);
 
         try{
-
             db.execSQL(INSERT);
         } catch (SQLException e) {
             throw e;
         }
     }
 
+
+    public List<Utils.DbTxOutpoint> getUnspent(){
+        String UNSPENT = String.format("SELECT * FROM %s WHERE spent == 0", db_table);
+        ArrayList<Utils.DbTxOutpoint> result = new ArrayList<Utils.DbTxOutpoint>();
+        Cursor cursor = db.rawQuery(UNSPENT, null);
+
+        while(cursor.moveToNext()){
+            result.add( new Utils.DbTxOutpoint(cursor.getString(0), cursor.getInt(1), cursor.getInt(2)) );
+        }
+
+        return result;
+    }
+
     public BigInteger getBalance(){
 
         //todo: sanitize
-        String SUM = String.format("SELECT SUM(value) FROM %s WHERE (status == 'distributed' OR status == 'confirmed') AND spent;", db_table);
+        String SUM = String.format("SELECT SUM(value) FROM %s WHERE (status == 'distributed' OR status == 'confirmed') AND spent == 0;", db_table);
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
-            Log.d("ahimsaDB", "inside cursor.movetofirst()");
+            return BigInteger.valueOf((long) cursor.getInt(0));
         }
 
         return BigInteger.ZERO;
 
     }
 
-    public void changeStatus(String txid, String status) throws Exception {
-        if( !checkTxid(txid) && !checkStatus(status))
-            throw new Exception("Invalid parameters");
+    public void setStatus(String txid, String status) throws Exception {
+//        if( !checkTxid(txid) && !checkStatus(status))
+//            throw new Exception("Invalid parameters");
 
         //todo: sanitize
         String UPDATE = String.format("UPDATE %s SET status = '%s' WHERE txid = '%s';", db_table, status, txid);
@@ -78,9 +100,9 @@ public class AhimsaDB {
 
     }
 
-    public void changeSpent(String txid, boolean spent) throws Exception {
-        if( !checkTxid(txid) )
-            throw new Exception("Invalid parameters");
+    public void setSpent(String txid, boolean spent) throws Exception {
+//        if( !checkTxid(txid) )
+//            throw new Exception("Invalid parameters");
 
         //todo: sanitize
         String UPDATE = String.format("UPDATE %s SET spent = %d WHERE txid = '%s';", db_table, (spent) ? 1 : 0, txid);
@@ -121,5 +143,24 @@ public class AhimsaDB {
         else
             return false;
     }
+    //-------------------------------------------------------------------------------
+    public void reset(){
+        application.deleteDatabase(db_name);
+        initialize();
+    }
+
+    public String toString(){
+        String SUM = String.format("SELECT * FROM %s;", db_table);
+        String result = "";
+
+        Cursor cursor = db.rawQuery(SUM, null);
+        while (cursor.moveToNext()) {
+            result += DatabaseUtils.dumpCurrentRowToString(cursor) + "\n";
+        }
+
+        return result;
+
+    }
+
 
 }

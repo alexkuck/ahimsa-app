@@ -1,14 +1,12 @@
 package io.ahimsa.ahimsa_app.application.util;
 
+import android.util.Log;
+
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
-import com.google.bitcoin.core.NetworkParameters;
-import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.Wallet;
 
-import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutPoint;
 import com.google.bitcoin.core.TransactionInput;
@@ -17,173 +15,114 @@ import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.Transaction.SigHash;
 
+import io.ahimsa.ahimsa_app.application.Configuration;
+import io.ahimsa.ahimsa_app.application.Constants;
+
 
 public class BulletinBuilder {
 
-    public static TransactionInput formulateInput(NetworkParameters net, ECKey key, String txid, BigInteger inValue, int index) {
+    public static void addInputs(Transaction tx, List<Utils.DbTxOutpoint> db_unspent){
 
-        //new transaction with hash param
-        //.addoutput with correct address, value, **index**
-        //add this transaction to the transaction outpoint
-        //add the transactionOutPoint to the transaction input
-
-
-        Sha256Hash hash = new Sha256Hash(txid);
-        Transaction previous = new Transaction(net, 1, hash) {
-            @Override
-            protected void unCache() {
-                //do nothing
-            }
-        };
-
-        for (int i = 0; i < 1 + index; i++) {
-            previous.addOutput(inValue, key.toAddress(net));
+        for(Utils.DbTxOutpoint out : db_unspent){
+            TransactionOutPoint outpoint = new TransactionOutPoint(Constants.NETWORK_PARAMETERS, out.vout, out.tx);
+            tx.addInput(new TransactionInput(Constants.NETWORK_PARAMETERS, tx, new byte[]{}, outpoint));
         }
-
-        TransactionOutPoint outpoint = new TransactionOutPoint(net, index, previous);
-        return new TransactionInput(net, null, new byte[]{}, outpoint);
-
     }
 
-    public static Address encodeAddress(NetworkParameters net, String slice) {
+    public static Address encodeAddress(String slice) {
 
         if (slice.length() != 20) {
             for (int w = slice.length(); w < 20; w++) {
                 slice += "_";
             }
         }
-
-        // byte[] arr = slice.getBytes();
-        // for(int i = 0; i < arr.length; i++){
-        //     System.out.print(arr[i] + "|");    
-        // } System.out.println();
-
-        return new Address(net, slice.getBytes());
+        return new Address(Constants.NETWORK_PARAMETERS, slice.getBytes());
     }
 
 
-    public static ArrayList<TransactionOutput> formulateMessageOutput(NetworkParameters net, BigInteger dust, String message) {
+    public static void addMessageOutputs(Configuration config, Transaction tx, String message) {
 
         if (message.length() > 140) {
             throw new Error("MESSAGE LENGTH OVER 140-0000000000000");
         }
 
-        ArrayList<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
-
         String slice = "";
         for (int i = 0; i < message.length(); i++) {
             slice += message.charAt(i);
             if (slice.length() == 20) {
-                outputs.add(new TransactionOutput(net, null, dust, encodeAddress(net, slice)));
+                tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(config.getDustValue()), encodeAddress(slice)) );
                 slice = "";
             }
         }
-        outputs.add(new TransactionOutput(net, null, dust, encodeAddress(net, slice)));
+        tx.addOutput(new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(config.getDustValue()), encodeAddress(slice)));
 
-        return outputs;
     }
 
-    public static TransactionOutput formulateChangeOutput(NetworkParameters net, ECKey key, BigInteger in_coin, List<TransactionOutput> outList, BigInteger fee) {
+    public static void addChangeOutput(Configuration config, Transaction tx, List<Utils.DbTxOutpoint> db_unspent) throws Exception{
 
-        BigInteger total = new BigInteger("0").subtract(fee).add(in_coin);
-        for (TransactionOutput out : outList) {
-            total = total.subtract(out.getValue());
+        BigInteger fee      = BigInteger.valueOf(config.getFeeValue());
+        BigInteger in_coin  = totalInCoin(db_unspent);
+        BigInteger out_coin = totalOutCoin(tx);
+
+        BigInteger total = BigInteger.ZERO.add(in_coin).subtract(out_coin).subtract(fee);
+
+        Log.d("BB", "fee |" + fee.toString());
+        Log.d("BB", "in_coin |" + in_coin.toString());
+        Log.d("BB", "out_coin |" + out_coin.toString());
+        Log.d("BB", "total |" + total.toString());
+
+
+        switch ( total.compareTo(BigInteger.ZERO) ){
+            case  0:
+            case  1:    break;
+            case -1:    Log.d("BB", Utils.bytesToHex(tx.bitcoinSerialize()) );
+                        throw new Exception("out_coin+fee exceeds in_coin | " + total.toString());
         }
-        return new TransactionOutput(net, null, total, key.toAddress(net));
 
-
+        Address default_addr = new Address(Constants.NETWORK_PARAMETERS, config.getDefaultAddress());
+        tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, total, default_addr) );
     }
 
-    public static Transaction createTX(NetworkParameters net, BigInteger fee, BigInteger dust,
-                                       ECKey key, String txid, BigInteger in_coin, int index,
-                                       String message) throws Exception {
-        //set up variables
-        TransactionInput input = formulateInput(net, key, txid, in_coin, index);
-        ArrayList<TransactionOutput> msgOutputs = formulateMessageOutput(net, dust, message);
-        Wallet wallet = new Wallet(net);
 
-        //add key to wallet
-        wallet.addKey(key);
+    public static BigInteger totalInCoin(List<Utils.DbTxOutpoint> db_unspent){
+        BigInteger in_coin = BigInteger.ZERO;
+        for(Utils.DbTxOutpoint out : db_unspent){
+            in_coin = in_coin.add(out.value);
+        }
+        return in_coin;
+    }
+    public static BigInteger totalOutCoin(Transaction tx){
+        BigInteger out_coin = BigInteger.ZERO;
+        for(TransactionOutput out : tx.getOutputs()){
+            out_coin = out_coin.add(out.getValue());
+        }
+        return out_coin;
+    }
 
+
+
+    //--------------------------------------------------------------------------------
+    public static Transaction createTx(Configuration config, Wallet wallet, List<Utils.DbTxOutpoint> db_unspent, String message, String topic) throws Exception{
         //create new transaction
-        Transaction result = new Transaction(net);
+        Transaction bulletin = new Transaction(Constants.NETWORK_PARAMETERS);
 
-        //add inputs to transaction
-        result.addInput(input);
+        //add inputs and message outputs
+        addInputs(bulletin, db_unspent);
+        addMessageOutputs(config, bulletin, message);
 
-        //add message outputs to transaction
-        for (TransactionOutput out : msgOutputs) {
-            result.addOutput(out);
-        }
-
-        //add hashtags outputs to transaction
-
-        //add useragent outputs to transaction
+        //add topic
+        //todo
 
         //add change output to transaction
-        result.addOutput(formulateChangeOutput(net, key, in_coin, result.getOutputs(), fee));
+        addChangeOutput(config, bulletin, db_unspent);
 
-
-        //sign transaction
-        result.signInputs(SigHash.ALL, wallet);
-
-        return result;
+        //sign the inputs
+        bulletin.signInputs(SigHash.ALL, wallet);
+        return bulletin;
     }
 
-    public static byte[] createByteTX(NetworkParameters net, BigInteger fee, BigInteger dust,
-                                      ECKey key, String txid, BigInteger in_coin, int index,
-                                      String message) throws Exception {
 
-        return createTX(net, fee, dust, key, txid, in_coin, index, message).bitcoinSerialize();
-    }
+
+
 
 }
-
-
-//    public static void main(String[] args) throws Exception{
-//        String network = "testnet";
-//        String min_tx_out = "0.00000546";
-//        BulletinBuilder test = new BulletinBuilder(network, min_tx_out);
-//
-//
-//        String      privkey     = "cSSnuU3up7Gzux7e8iL2utHQCx1GjLGnX5utXiB9Trk4CWtjDWd2";
-//        String      txid        = "fb1cd4be27e553baafa00c5b40f59a77ba22d6d5fa2245d7a38b0ca412632ba1";
-//        String      value       = "0.4993163";
-//        long        index       =  8;
-//        String      message     = "We make our world significant by the courage of our questions and the depth of our answers.";
-//        String      fee         = "0.0001";
-//
-//        Transaction result = test.createTX(privkey, txid, value, index, message, fee);
-//
-//        System.out.println("-----------");
-//        System.out.println(result.toString());
-//        System.out.println("-----------");
-//        System.out.println(bytesToHex(result.bitcoinSerialize()));
-//
-//
-//    }
-
-
-
-/*
-    private void printArray(byte[] array){
-        for(int i = 0; i < array.length; i++){
-            System.out.print(array[i]+"|");
-        }
-
-    }
-
-    private byte[] sliceArray(byte[] array, int begin, int end){
-        byte[] result = new byte[end - begin];
-        int c = 0;
-
-        for(int i = begin; i < end; i++){
-            result[c] = array[i];
-            System.out.println(result[c]);
-            c++;
-        }
-
-        return result;
-    }
-
-*/

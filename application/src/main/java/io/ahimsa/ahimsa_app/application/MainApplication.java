@@ -5,29 +5,25 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageInfo;
-import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.store.UnreadableWalletException;
 import com.google.bitcoin.store.WalletProtobufSerializer;
-import com.google.bitcoin.wallet.WalletFiles;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 
-import io.ahimsa.ahimsa_app.application.service.NodeService;
 import io.ahimsa.ahimsa_app.application.util.AhimsaDB;
 import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
 import io.ahimsa.ahimsa_app.application.util.BootlegTransaction;
@@ -47,6 +43,13 @@ public class MainApplication extends Application {
     public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
     public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "tx_in_coin";
 
+    public static final String ACTION_BROADCAST_TX_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_tx_success";
+    public static final String EXTRA_TX_FUTURE = MainApplication.class.getPackage().getName() + "broadcast_tx_txid";
+
+    public static final String ACTION_BROADCAST_TX_FAILURE = MainApplication.class.getPackage().getName() + "broadcast_tx_failure";
+    public static final String EXTRA_TX_BYTES   = MainApplication.class.getPackage().getName() + "tx_hex_bytes";
+
+
     //----------------------------------------------------------------------------------------
 
     AhimsaWallet ahimwall;
@@ -64,6 +67,8 @@ public class MainApplication extends Application {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_HTTPS_SUCCESS);
         intentFilter.addAction(ACTION_HTTPS_FAILURE);
+        intentFilter.addAction(ACTION_BROADCAST_TX_SUCCESS);
+        intentFilter.addAction(ACTION_BROADCAST_TX_FAILURE);
         registerReceiver(serviceReceiver, intentFilter);
 
         //initialize wallet
@@ -97,6 +102,16 @@ public class MainApplication extends Application {
                     String e = intent.getStringExtra(EXTRA_EXCEPTION);
                     failureOnHttps(e);
                 }
+                else if (ACTION_BROADCAST_TX_SUCCESS.equals(action)){
+                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_FUTURE);
+                    successOnBroadcastTx(future);
+                }
+                else if (ACTION_BROADCAST_TX_FAILURE.equals(action)){
+                    byte[] tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
+                    failureOnBroadcastTx(tx);
+                }
+
+
             }
         }
     };
@@ -113,13 +128,32 @@ public class MainApplication extends Application {
         TransactionOutput tout = new TransactionOutput(Constants.NETWORK_PARAMETERS, bootlegTx, toSelf, defKey.toAddress(Constants.NETWORK_PARAMETERS));
         bootlegTx.modifyOutput(1, tout);
 
-        ahimwall.broadcastFundingTx(bootlegTx.toTransaction());
+        try{
+            ahimwall.broadcastFundingTx(bootlegTx.toTransaction());
+        }catch(Exception e){
+            Log.d(TAG, "Broadcast function within ahimsaWallet threw an error: " + e);
+        }
+
     }
 
     private void failureOnHttps(String e){
-        Toast.makeText(this, "Uh oh! It seams the funding server is down: " + e, Toast.LENGTH_LONG).show();
-        Toast.makeText(this, "But do not fear, funding reattempt will occur upon app restart.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Uh oh! The funding server did not work as expected: " + e, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "But do not fear, a reattempt will automatically occur. //todo: implement automatic funding reattempt", Toast.LENGTH_LONG).show();
     }
+
+    private void successOnBroadcastTx(byte[] future){
+        Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
+
+        Toast.makeText(this, "Successfully broadcast transaction: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
+        ahimwall.successOnBroadcastTx(tx);
+    }
+
+    private void failureOnBroadcastTx(byte[] tx){
+        //todo handle failure on broadcast
+        Toast.makeText(this, "Failed to broadcast transaction. No further currently takes place.", Toast.LENGTH_LONG).show();
+    }
+
+
 
 
     //--------------------------------------------------------------------------------
@@ -222,6 +256,9 @@ public class MainApplication extends Application {
 
         Log.d(TAG, "wallet saved to: '" + walletFile + "', took " + (System.currentTimeMillis() - start) + "ms");
     }
+
+    //Load ----------------------------------------------------------------
+
 
 }
 

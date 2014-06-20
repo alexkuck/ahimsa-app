@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 public class Configuration {
 
     public static final String PREF_KEY_IS_FUNDED = "funded";
+    public static final String PREF_FUND_TXID = "fund_txid";
     public static final String PREF_KEY_FUNDING_IP = "funding_ip";
 
     public static final String PREF_KEY_TRUSTED_PEER = "trusted_peer";
@@ -35,10 +36,13 @@ public class Configuration {
         return prefs.getBoolean(PREF_KEY_IS_FUNDED, false);
     }
     public void     setIsFunded(Boolean x){
-        prefs.edit().putBoolean(PREF_KEY_MIN_PEERS, x).commit();
+        prefs.edit().putBoolean(PREF_KEY_IS_FUNDED, x).commit();
     }
 
-    public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, "https://ahimsa.io:1050");}
+    public String   getFundingTxid(){ return prefs.getString(PREF_FUND_TXID, "");}
+    public void     setFundingTxid(String txid){ prefs.edit().putString(PREF_FUND_TXID, txid).commit();}
+
+    public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, Constants.ROBINHOOD_FUND);}
     public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x);}
 
     public String   getTrustedPeer() {return prefs.getString(PREF_KEY_TRUSTED_PEER, "");}
@@ -52,7 +56,7 @@ public class Configuration {
     }
 
     public int      getMinConnectedPeers(){
-        return prefs.getInt(PREF_KEY_MIN_PEERS, 6);
+        return prefs.getInt(PREF_KEY_MIN_PEERS, 2);
     }
     public void     setMinConnectedPeers(int x) {
         prefs.edit().putInt(PREF_KEY_MIN_PEERS, x).commit();
@@ -87,17 +91,17 @@ public class Configuration {
     }
 
     public int      getMinTimeout(){
-        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 10);
+        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 25);
     }
     public void     setMinTimeout(int time) {
         prefs.edit().putInt(PREF_KEY_MIN_TIMEOUT, time).commit();
     }
 
     public void     reset() {
-        boolean funded = getIsFunded();
-        prefs.edit().clear();
+//        boolean funded = getIsFunded();
+        prefs.edit().clear().commit();
 
-        setIsFunded(funded);
+//        setIsFunded(funded);
     }
 
 
