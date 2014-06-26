@@ -9,10 +9,16 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.bitcoin.core.AbstractBlockChain;
+import com.google.bitcoin.core.BlockChain;
+import com.google.bitcoin.core.CheckpointManager;
 import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Wallet;
+import com.google.bitcoin.store.BlockStore;
+import com.google.bitcoin.store.BlockStoreException;
+import com.google.bitcoin.store.SPVBlockStore;
 import com.google.bitcoin.store.UnreadableWalletException;
 import com.google.bitcoin.store.WalletProtobufSerializer;
 
@@ -20,10 +26,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 
 import javax.annotation.Nonnull;
 
+import io.ahimsa.ahimsa_app.application.service.NodeService;
 import io.ahimsa.ahimsa_app.application.util.AhimsaDB;
 import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
 import io.ahimsa.ahimsa_app.application.util.BootlegTransaction;
@@ -34,7 +42,7 @@ import io.ahimsa.ahimsa_app.application.util.Utils;
  */
 public class MainApplication extends Application {
     private static final String TAG = "MainApplication";
-    //----------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
     //Receiver Actions
     public static final String ACTION_HTTPS_SUCCESS  = MainApplication.class.getPackage().getName() + "https_success";
     public static final String EXTRA_TX_HEX_STRING   = MainApplication.class.getPackage().getName() + "tx_hex_string";
@@ -50,13 +58,18 @@ public class MainApplication extends Application {
     public static final String EXTRA_TX_BYTES   = MainApplication.class.getPackage().getName() + "tx_hex_bytes";
 
 
-    //----------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
 
     AhimsaWallet ahimwall;
+
+    File walletFile;
     Wallet wallet;
     Configuration config;
     AhimsaDB db;
-    File walletFile;
+
+    File blockStoreFile;
+    BlockStore store;
+    BlockChain chain;
 
     @Override
     public void onCreate()
@@ -75,19 +88,23 @@ public class MainApplication extends Application {
         walletFile = getFileStreamPath(Constants.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
 
-        //initialize config and database
+        //initialize blockchain
+        blockStoreFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.BLOCKSTORE_FILENAME);
+        if( loadBlockChain() ){
+            //todo: handle false case
+//            NodeService.startActionSyncBlockchain(this);
+        }
+
+        //initialize config and database, initialize ahimsawallet
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
         db = new AhimsaDB(this);
-
-
-        //initialize ahimsawallet
         ahimwall = new AhimsaWallet(this, wallet, db, config);
 
     }
 
     //todo: low memory / shutdown handle
 
-    //--------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
     private final BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -108,10 +125,9 @@ public class MainApplication extends Application {
                 }
                 else if (ACTION_BROADCAST_TX_FAILURE.equals(action)){
                     byte[] tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
+                    intent.getSerializableExtra(EXTRA_EXCEPTION);
                     failureOnBroadcastTx(tx);
                 }
-
-
             }
         }
     };
@@ -128,8 +144,12 @@ public class MainApplication extends Application {
         TransactionOutput tout = new TransactionOutput(Constants.NETWORK_PARAMETERS, bootlegTx, toSelf, defKey.toAddress(Constants.NETWORK_PARAMETERS));
         bootlegTx.modifyOutput(1, tout);
 
+        //add funding txid to configuration but DO NOT switch funded flag
+        //this txid in config will be overwritten if unsuccessful broadcast
+        config.setFundingTxid(bootlegTx.getHash().toString());
+
         try{
-            ahimwall.broadcastFundingTx(bootlegTx.toTransaction());
+            ahimwall.broadcastTx(bootlegTx.toTransaction());
         }catch(Exception e){
             Log.d(TAG, "Broadcast function within ahimsaWallet threw an error: " + e);
         }
@@ -139,25 +159,26 @@ public class MainApplication extends Application {
     private void failureOnHttps(String e){
         Toast.makeText(this, "Uh oh! The funding server did not work as expected: " + e, Toast.LENGTH_LONG).show();
         Toast.makeText(this, "But do not fear, a reattempt will automatically occur. //todo: implement automatic funding reattempt", Toast.LENGTH_LONG).show();
+        //todo handle
     }
 
     private void successOnBroadcastTx(byte[] future){
         Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
 
         Toast.makeText(this, "Successfully broadcast transaction: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
-        ahimwall.successOnBroadcastTx(tx);
+        ahimwall.commitTx(tx);
     }
 
     private void failureOnBroadcastTx(byte[] tx){
-        //todo handle failure on broadcast
         Toast.makeText(this, "Failed to broadcast transaction. No further currently takes place.", Toast.LENGTH_LONG).show();
+        //todo handle
     }
 
 
 
 
-    //--------------------------------------------------------------------------------
-    //PUBLIC METHODS------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+    //PUBLIC METHODS--------------------------------------------------------------------------------
     public Configuration getConfig()
     {
         return config;
@@ -168,13 +189,37 @@ public class MainApplication extends Application {
         return ahimwall;
     }
 
-    public void broadcastBulletin(String topic, String message)
-    {
-        ahimwall.broadcastBulletin(topic, message);
+    public AbstractBlockChain getBlockChain() {
+        return chain;
     }
 
-    //--------------------------------------------------------------------------------
-    //Load/Save Wallet----------------------------------------------------------------
+    public void broadcastBulletin(String topic, String message)
+    {
+//        ahimwall.broadcastBulletin(topic, message);
+
+        //todo temporary
+        Long h = new Long(topic);
+        Log.d(TAG, "Discover Height: " + h);
+        NodeService.startDiscoverTx(this, h);
+
+    }
+
+    public void toLog(){
+        ahimwall.toLog();
+        try{
+            Log.d(TAG, "BEST BLOCKCHAIN HEIGHT | " + chain.getBestChainHeight());
+        }catch (Exception e){
+            Log.d(TAG, "application toLog() fail, chain blew something up: " + e.toString());
+        }
+    }
+
+    //TODO: TEMPORARY, maybe not
+    public long getCreationTime(){
+        return wallet.getEarliestKeyCreationTime();
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //Load/Save Wallet------------------------------------------------------------------------------
     public void save()
     {
         try
@@ -187,6 +232,7 @@ public class MainApplication extends Application {
         }
     }
 
+    //TODO: MAJOR: handle cases when loading wallet. a backup of everything.
     private void loadWalletFromProtobuf()
     {
 
@@ -257,7 +303,43 @@ public class MainApplication extends Application {
         Log.d(TAG, "wallet saved to: '" + walletFile + "', took " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    //Load ----------------------------------------------------------------
+    //Load Blockchain-------------------------------------------------------------------------------
+    //TODO: MAJOR: handle cases when loading blockchain.
+    //todo: this is a mess
+    private boolean loadBlockChain(){
+
+        try {
+            final boolean blockStoreFileExists = blockStoreFile.exists();
+            store = new SPVBlockStore(Constants.NETWORK_PARAMETERS, blockStoreFile);
+//            store.getChainHead(); // detect corruptions as early as possible
+
+            final long earliestKeyCreationTime = wallet.getEarliestKeyCreationTime();
+            Log.d(TAG, String.format("blockChainFileExists: %s | earliestKeyCreationTime %d", blockStoreFileExists, earliestKeyCreationTime));
+            if (!blockStoreFileExists  && earliestKeyCreationTime > 0){
+                try{
+                    final InputStream checkpointsInputStream = getAssets().open(Constants.CHECKPOINTS_FILENAME);
+                    CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream, store, earliestKeyCreationTime);
+                }catch (final IOException x){
+                    Log.e(TAG, "problem reading checkpoints, continuing without", x);
+                }
+            }
+        } catch (BlockStoreException e) {
+            blockStoreFile.delete();
+
+            //todo: look here
+            final String msg = "blockstore cannot be created";
+            Log.d(TAG, msg);
+            throw new Error(msg, e);
+        }
+
+        try {
+            chain = new BlockChain(Constants.NETWORK_PARAMETERS, store);
+            return true;
+        } catch (BlockStoreException e) {
+            throw new Error("blockchain cannot be created", e);
+        }
+
+    }
 
 
 }

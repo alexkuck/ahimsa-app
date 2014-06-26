@@ -25,7 +25,7 @@ public class BulletinFragment extends Fragment {
 
     private Activity activity;
     private MainApplication application;
-    private AhimsaWallet ahimwall;
+//    private AhimsaWallet ahimwall;
 
 
 
@@ -36,7 +36,7 @@ public class BulletinFragment extends Fragment {
 
         this.activity = activity;
         this.application = (MainApplication) activity.getApplication();
-        this.ahimwall = application.getAhimsaWallet();
+//        this.ahimwall = application.getAhimsaWallet();
 
     }
 
@@ -63,8 +63,10 @@ public class BulletinFragment extends Fragment {
     }
 
     public void broadcastBulletin(String message, String topic){
-        ahimwall.broadcastBulletin(topic, message);
+        application.broadcastBulletin(topic, message);
     }
+
+
 
 
 }

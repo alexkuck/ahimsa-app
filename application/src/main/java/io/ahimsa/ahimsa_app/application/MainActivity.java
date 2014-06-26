@@ -104,7 +104,7 @@ public class MainActivity extends Activity
 
     //start node service
     private void printWallet(){
-        application.getAhimsaWallet().toLog();
+        application.toLog();
     }
 
     private void resetWallet(){

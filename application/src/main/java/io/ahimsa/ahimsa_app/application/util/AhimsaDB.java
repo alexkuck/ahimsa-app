@@ -17,7 +17,7 @@ import io.ahimsa.ahimsa_app.application.MainApplication;
  */
 public class AhimsaDB {
 
-    public static final String PENDING = "pending";
+//    public static final String PENDING = "pending";
     public static final String DISTRIBUTED = "distributed";
     public static final String CONFIRMED = "confirmed";
 
@@ -25,8 +25,8 @@ public class AhimsaDB {
     private static final String db_table = "wallet_outpoints";
 
     private static final String CREATE = String.format("CREATE TABLE IF NOT EXISTS %s " +
-            "(txid STRING PRIMARY KEY, vout INTEGER, value INTEGER, status VARCHAR(11), spent BOOLEAN," +
-            " CHECK (status IN ('pending', 'distributed', 'confirmed')), CHECK (spent IN (0, 1)) );", db_table);
+            "(txid STRING, vout INTEGER, value INTEGER, status VARCHAR(11), spent BOOLEAN, PRIMARY KEY(txid, vout)" +
+            " CHECK (status IN ('distributed', 'confirmed')), CHECK (spent IN (0, 1)) );", db_table);
 
     MainApplication application;
     SQLiteDatabase db;
@@ -41,7 +41,7 @@ public class AhimsaDB {
         db.execSQL(CREATE);
     }
 
-    public void addTx(String txid, int vout, BigInteger value, String status, boolean spent) throws Exception {
+    public void addOutpoint(String txid, int vout, BigInteger value, String status, boolean spent) throws Exception {
         if( !checkTxid(txid) && !checkVout(vout) && !checkValue(value) && !checkStatus(status))
             throw new Exception("Invalid parameters");
 
@@ -59,8 +59,15 @@ public class AhimsaDB {
     }
 
 
-    public List<Utils.DbTxOutpoint> getUnspent(){
-        String UNSPENT = String.format("SELECT * FROM %s WHERE spent == 0", db_table);
+    public List<Utils.DbTxOutpoint> getUnspent(boolean only_confirmed){
+        //returns all unspent transactions
+        //todo: spend only confirmed transactions
+
+        String UNSPENT = String.format("SELECT * FROM %s WHERE spent == 0 ORDER BY value DESC;", db_table);
+        if(only_confirmed){
+            UNSPENT = String.format("SELECT * FROM %s WHERE spent == 0 AND status == 'confirmed' ORDER BY value DESC;", db_table);
+        }
+
         ArrayList<Utils.DbTxOutpoint> result = new ArrayList<Utils.DbTxOutpoint>();
         Cursor cursor = db.rawQuery(UNSPENT, null);
 
@@ -72,9 +79,8 @@ public class AhimsaDB {
     }
 
     public BigInteger getBalance(){
-
-        //todo: sanitize
-        String SUM = String.format("SELECT SUM(value) FROM %s WHERE (status == 'distributed' OR status == 'confirmed') AND spent == 0;", db_table);
+        String SUM = String.format("SELECT SUM(value) FROM %s WHERE spent == 0;", db_table);
+        //(status == 'distributed' OR status == 'confirmed') AND
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
@@ -100,12 +106,12 @@ public class AhimsaDB {
 
     }
 
-    public void setSpent(String txid, boolean spent) throws Exception {
+    public void setSpent(String txid, Long vout, boolean spent) throws Exception {
 //        if( !checkTxid(txid) )
 //            throw new Exception("Invalid parameters");
 
         //todo: sanitize
-        String UPDATE = String.format("UPDATE %s SET spent = %d WHERE txid = '%s';", db_table, (spent) ? 1 : 0, txid);
+        String UPDATE = String.format("UPDATE %s SET spent = %d WHERE txid = '%s' AND vout == %d;", db_table, (spent) ? 1 : 0, txid, vout);
 
         try{
             db.execSQL(UPDATE);
@@ -138,7 +144,7 @@ public class AhimsaDB {
     }
 
     private boolean checkStatus(String status){
-        if(status == "pending" || status == "distributed" || status ==  "confirmed")
+        if(status == "distributed" || status ==  "confirmed")
             return true;
         else
             return false;

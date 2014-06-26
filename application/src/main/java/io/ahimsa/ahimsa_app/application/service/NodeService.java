@@ -8,22 +8,33 @@ import android.net.NetworkInfo;
 import android.os.PowerManager;
 import android.util.Log;
 
+import com.google.bitcoin.core.AbstractBlockChain;
+import com.google.bitcoin.core.Block;
 import com.google.bitcoin.core.Peer;
 import com.google.bitcoin.core.PeerGroup;
+import com.google.bitcoin.core.Sha256Hash;
+import com.google.bitcoin.core.StoredBlock;
 import com.google.bitcoin.core.Transaction;
+import com.google.bitcoin.core.TransactionOutput;
+import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.net.discovery.DnsDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscoveryException;
+import com.google.bitcoin.store.BlockStore;
+import com.google.bitcoin.store.BlockStoreException;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.net.InetSocketAddress;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.ahimsa.ahimsa_app.application.Configuration;
 import io.ahimsa.ahimsa_app.application.Constants;
@@ -39,7 +50,7 @@ public class NodeService extends IntentService {
 
     private static final String TAG = "NodeService";
 
-    //NodeService | PeerGroup------------------------------------------------------
+    //NodeService | PeerGroup-----------------------------------------------------------------------
     private MainApplication application;
     private Configuration config;
 
@@ -51,26 +62,33 @@ public class NodeService extends IntentService {
     private String trustedPeerHost;
 
 
-    //NodeService | Actions-------------------------------------------------------
+    //NodeService | Actions-------------------------------------------------------------------------
     //Broadcast Raw Message
-    private static final String ACTION_BROADCAST_TX      = NodeService.class.getPackage().getName() + ".broadcast_transaction";
-    private static final String EXTRA_TX                 = NodeService.class.getPackage().getName() + ".transaction";
+    private static final String ACTION_BROADCAST_TX     = NodeService.class.getPackage().getName() + ".broadcast_transaction";
+    private static final String EXTRA_TX                = NodeService.class.getPackage().getName() + ".transaction";
 
     //Sync Blockchain
-    private static final String ACTION_SYNC_BLOCKCHAIN   = NodeService.class.getPackage().getName() + ".sync_blockchain";
+    private static final String ACTION_SYNC_BLOCKCHAIN  = NodeService.class.getPackage().getName() + ".sync_blockchain";
+
+    //Confirm Transaction
+    private static final String ACTION_CONFIRM_TX       = NodeService.class.getPackage().getName() + ".confirm_tx";
+
+    //Discover Transaction
+    private static final String ACTION_DISCOVER_TX      = NodeService.class.getPackage().getName() + ".discover_transaction";
+    private static final String EXTRA_BLOCKHEIGHT       = NodeService.class.getPackage().getName() + ".blockheight";
 
     //Network Test
-    private static final String ACTION_NETWORK_TEST      = NodeService.class.getPackage().getName() + ".network_test";
+    private static final String ACTION_NETWORK_TEST     = NodeService.class.getPackage().getName() + ".network_test";
 
-    //----------------------------------------------------------------------------
-    //IntentService---------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+    //IntentService---------------------------------------------------------------------------------
 
     public NodeService() {
         super("NodeService");
     }
 
-    //--------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
 
     private void initiate()
     {
@@ -83,7 +101,7 @@ public class NodeService extends IntentService {
 
     }
 
-    private void startPeerGroup()
+    private void startPeerGroup(@Nullable AbstractBlockChain chain)
     {
 
         final String lockName = getPackageName() + " peer connection";
@@ -98,8 +116,14 @@ public class NodeService extends IntentService {
                 Log.d(TAG, "acquiring wakelock");
                 wakeLock.acquire();
 
-                Log.d(TAG, "starting peergroup");
-                peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS);
+                if(chain != null){
+                    Log.d(TAG, "starting peergroup WITH an associated chain");
+                    peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, chain);
+                    peerGroup.setFastCatchupTimeSecs(application.getCreationTime());
+                }else{
+                    Log.d(TAG, "starting peergroup WITHOUT an associated chain");
+                    peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS);
+                }
                 peerGroup.setUserAgent(Constants.USER_AGENT, Constants.VERSION);
 
                 Log.d(TAG, "started peergroup");
@@ -147,7 +171,6 @@ public class NodeService extends IntentService {
                     }
                 });
 
-                //todo: bloomandwait
                 peerGroup.startAndWait();
                 //TODO: let application know timeout occurred
                 peerGroup.waitForPeers(minConnectedPeers).get(config.getMinTimeout(), TimeUnit.SECONDS);
@@ -196,21 +219,38 @@ public class NodeService extends IntentService {
 
             Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_FAILURE);
             intent.putExtra(application.EXTRA_TX_BYTES, tx);
+            //todo: put serialized error into intent
             intent.putExtra(application.EXTRA_EXCEPTION, e.toString());
             application.sendBroadcast(intent);
         }
-//        catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        } catch (TimeoutException e) {
-//            e.printStackTrace();
-//        }
-
-
-
     }
 
+    private void startBlockChainDownload()
+    {
+        if(peerGroup != null)
+        {
+            Log.d(TAG, "START | HANDLE_SYNC_BLOCKCHAIN: " + application.getBlockChain().getBestChainHeight());
+            peerGroup.downloadBlockChain();
+            Log.d(TAG, "FINISH | HANDLE_SYNC_BLOCKCHAIN: " + application.getBlockChain().getBestChainHeight());
+        }
+    }
+
+    private Long getPeerBestHeight(){
+        if(peerGroup != null){
+            return peerGroup.getDownloadPeer().getBestHeight();
+        }
+        return new Long(0);
+    }
+
+    private List<Peer> getConnectedPeers()
+    {
+        if (peerGroup != null)
+            return peerGroup.getConnectedPeers();
+        return null;
+    }
+
+
+    //----------------------------------------------------------------------------------------------
     private class ConnectionDetector
     {
         private Context _context;
@@ -236,8 +276,7 @@ public class NodeService extends IntentService {
             return false;
         }
     }
-
-    //--------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
     //Public start action methods
 
     public static void startActionBroadcastTx(@Nonnull Context context, @Nonnull byte[] tx)
@@ -248,9 +287,27 @@ public class NodeService extends IntentService {
         context.startService(intent);
     }
 
-//    public static void startActionSyncBlockchain(@Nonnull Context context, @Nonnull ){
-//
-//    }
+    public static void startActionSyncBlockchain(@Nonnull Context context){
+        Intent intent = new Intent(context, NodeService.class);
+        intent.setAction(ACTION_SYNC_BLOCKCHAIN);
+        context.startService(intent);
+    }
+
+    public static void startConfirmTx(@Nonnull Context context, @Nonnull byte[] tx){
+        //todo: add time to parameters
+        Intent intent = new Intent(context, NodeService.class);
+        intent.setAction(ACTION_CONFIRM_TX);
+        intent.putExtra(EXTRA_TX, tx);
+        context.startService(intent);
+    }
+
+    public static void startDiscoverTx(@Nonnull Context context, @Nonnull Long blockheight){
+        Intent intent = new Intent(context, NodeService.class);
+        intent.setAction(ACTION_DISCOVER_TX);
+        intent.putExtra(EXTRA_BLOCKHEIGHT, blockheight);
+        context.startService(intent);
+
+    }
 
     public static void startNetworkTest(@Nonnull Context context)
     {
@@ -258,9 +315,6 @@ public class NodeService extends IntentService {
         intent.setAction(ACTION_NETWORK_TEST);
         context.startService(intent);
     }
-
-
-
     //--------------------------------------------------------------------------------
     //Handle intents
     protected void onHandleIntent(Intent intent){
@@ -279,6 +333,17 @@ public class NodeService extends IntentService {
                 handleSyncBlockchain();
             }
 
+            else if(ACTION_CONFIRM_TX.equals(action))
+            {
+                final byte[] tx = intent.getByteArrayExtra(EXTRA_TX);
+                confirmTx(tx);
+            }
+
+            else if(ACTION_DISCOVER_TX.equals(action)){
+                final Long height = intent.getLongExtra(EXTRA_BLOCKHEIGHT, -1);
+                discoverTx(height);
+            }
+
             else if (ACTION_NETWORK_TEST.equals(action))
             {
                 handleNetworkTest();
@@ -290,15 +355,43 @@ public class NodeService extends IntentService {
     private void handleActionBroadcastTx(byte[] tx)
     {
         initiate();
-        startPeerGroup();
+        startPeerGroup(null);
         broadcastTx(tx);
         stopPeerGroup();
     }
 
-
     private void handleSyncBlockchain()
     {
+        initiate();
+        startPeerGroup(application.getBlockChain());
+        startBlockChainDownload();
+        stopPeerGroup();
+    }
 
+    private void confirmTx(byte[] tx)
+    {
+
+    }
+
+    private void discoverTx(Long height)
+    {
+        initiate();
+        AbstractBlockChain chain = application.getBlockChain();
+        Wallet wallet = application.getAhimsaWallet().getWallet();
+
+        if(chain.getBestChainHeight() < height){
+            startPeerGroup(chain);
+            if(getPeerBestHeight() < height){
+                startBlockChainDownload();
+            } else{
+                //todo: send intent claiming block height exceeds highest in chain
+            }
+        } else{
+            startPeerGroup(null);
+        }
+
+        List<Transaction> relevantTxs = findTxInBlock(chain.getBlockStore(), wallet, height);
+        Log.d(TAG, relevantTxs.toString());
     }
 
     private void handleNetworkTest()
@@ -307,18 +400,61 @@ public class NodeService extends IntentService {
 
     }
 
+    //Discover--------------------------------------------------------------------------------------
+    public List<Transaction> findTxInBlock(BlockStore store, Wallet wallet, Long height) {
+        // Returns all of the funding transactions in the block at this height
+        StoredBlock targetBlock = getBlock(store, height);
+        Sha256Hash hash = targetBlock.getHeader().getHash();
 
+        // we must download the full block from the network
+        List<Transaction> foundTxs = new ArrayList<Transaction>();
+        if(peerGroup != null){
+            try {
+                Block completeBlock = peerGroup.getDownloadPeer().getBlock(hash).get();
+                for (Transaction tx : completeBlock.getTransactions()) {
+                    if (isMyTx(tx, wallet)){
+                        foundTxs.add(tx);
+                    }
+                }
+                return foundTxs;
 
-    //Utility-------------------------------------------------------------------
-    private List<Peer> getConnectedPeers()
-    {
-        if (peerGroup != null)
-            return peerGroup.getConnectedPeers();
-        else
-            return null;
+            } catch (InterruptedException e) {
+                //todo handle
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                //todo handle
+                e.printStackTrace();
+            }
+        }
+        return foundTxs;
     }
 
+    private StoredBlock getBlock(BlockStore store, Long height){
+        try {
+            StoredBlock current = store.getChainHead();
+            if (height > current.getHeight()) {
+                return null;
+            }
+            for (int i = current.getHeight(); i >= height; i -= 1) {
+                StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
+                current = previous;
+            }
+            return current;
+        } catch (BlockStoreException e) {
+            Log.d(TAG, String.format("Block of height %d is not within the blockstore.", height));
+            return null;
+        }
+    }
 
+    public boolean isMyTx(Transaction tx, Wallet wallet) {
+        // Uses a wallet to determine if any of the txouts are sent to a key in the wallet
+        for (TransactionOutput txOut : tx.getOutputs()) {
+            if (txOut.isMine(wallet)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 }

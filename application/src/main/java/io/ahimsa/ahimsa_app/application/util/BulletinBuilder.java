@@ -31,25 +31,24 @@ public class BulletinBuilder {
 
     public static Address encodeAddress(String slice) {
 
-        if (slice.length() != 20) {
-            for (int w = slice.length(); w < 20; w++) {
+        if (slice.length() != Constants.CHAR_PER_OUT) {
+            for (int w = slice.length(); w < Constants.CHAR_PER_OUT; w++) {
                 slice += "_";
             }
         }
         return new Address(Constants.NETWORK_PARAMETERS, slice.getBytes());
     }
 
-
     public static void addMessageOutputs(Configuration config, Transaction tx, String message) {
 
-        if (message.length() > 140) {
+        if (message.length() > Constants.MAX_MESSAGE_LEN) {
             throw new Error("MESSAGE LENGTH OVER 140-0000000000000");
         }
 
         String slice = "";
         for (int i = 0; i < message.length(); i++) {
             slice += message.charAt(i);
-            if (slice.length() == 20) {
+            if (slice.length() == Constants.CHAR_PER_OUT) {
                 tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(config.getDustValue()), encodeAddress(slice)) );
                 slice = "";
             }
@@ -79,10 +78,18 @@ public class BulletinBuilder {
                         throw new Exception("out_coin+fee exceeds in_coin | " + total.toString());
         }
 
+        BigInteger min = BigInteger.valueOf(config.getMinCoinNecessary());
         Address default_addr = new Address(Constants.NETWORK_PARAMETERS, config.getDefaultAddress());
-        tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, total, default_addr) );
+        while(total.compareTo(BigInteger.ZERO) == 1){
+            if(total.compareTo(min) > 0){
+                tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, min, default_addr) );
+                total = total.subtract(min);
+            } else{
+                tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, total, default_addr) );
+                total = total.subtract(total);
+            }
+        }
     }
-
 
     public static BigInteger totalInCoin(List<Utils.DbTxOutpoint> db_unspent){
         BigInteger in_coin = BigInteger.ZERO;
@@ -99,22 +106,20 @@ public class BulletinBuilder {
         return out_coin;
     }
 
-
-
-    //--------------------------------------------------------------------------------
-    public static Transaction createTx(Configuration config, Wallet wallet, List<Utils.DbTxOutpoint> db_unspent, String message, String topic) throws Exception{
+    //----------------------------------------------------------------------------------------------
+    public static Transaction createTx(Configuration config, Wallet wallet, List<Utils.DbTxOutpoint> unspent, String message, String topic) throws Exception{
         //create new transaction
         Transaction bulletin = new Transaction(Constants.NETWORK_PARAMETERS);
 
         //add inputs and message outputs
-        addInputs(bulletin, db_unspent);
+        addInputs(bulletin, unspent);
         addMessageOutputs(config, bulletin, message);
 
         //add topic
         //todo
 
         //add change output to transaction
-        addChangeOutput(config, bulletin, db_unspent);
+        addChangeOutput(config, bulletin, unspent);
 
         //sign the inputs
         bulletin.signInputs(SigHash.ALL, wallet);

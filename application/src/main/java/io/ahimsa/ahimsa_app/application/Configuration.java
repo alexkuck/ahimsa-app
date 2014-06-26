@@ -19,15 +19,15 @@ public class Configuration {
     public static final String PREF_KEY_MIN_TIMEOUT = "minimum_timeout";
     public static final String PREF_KEY_DUST_VALUE = "dust_value";
     public static final String PREF_KEY_FEE_VALUE = "fee_value";
+    public static final String PREF_KEY_ONLY_CONFIRMED = "only_confirmed";
 
     public static final String PREF_KEY_HIGHEST_BLOCK_SEEN = "highest_block_seen";
     public static final String PREF_KEY_DEFAULT_ADDRESS = "default_address";
 
 
+
     private final SharedPreferences prefs;
-
     public Configuration(@Nonnull final SharedPreferences prefs){
-
         this.prefs = prefs;
     }
 
@@ -39,11 +39,15 @@ public class Configuration {
         prefs.edit().putBoolean(PREF_KEY_IS_FUNDED, x).commit();
     }
 
+
     public String   getFundingTxid(){ return prefs.getString(PREF_FUND_TXID, "");}
     public void     setFundingTxid(String txid){ prefs.edit().putString(PREF_FUND_TXID, txid).commit();}
 
     public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, Constants.ROBINHOOD_FUND);}
     public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x);}
+
+
+
 
     public String   getTrustedPeer() {return prefs.getString(PREF_KEY_TRUSTED_PEER, "");}
     public void     setTrustedPeer(String x) {prefs.edit().putString(PREF_KEY_TRUSTED_PEER, x);}
@@ -62,6 +66,9 @@ public class Configuration {
         prefs.edit().putInt(PREF_KEY_MIN_PEERS, x).commit();
     }
 
+
+
+
     public Long     getDustValue() {
         return prefs.getLong(PREF_KEY_DUST_VALUE, Constants.MIN_DUST);
     }
@@ -75,6 +82,21 @@ public class Configuration {
     public void     setFeeValue(long x) {
         prefs.edit().putLong(PREF_KEY_FEE_VALUE, x).commit();
     }
+
+    public Long     getMinCoinNecessary(){
+        return getFeeValue() + getDustValue()*((Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
+    }
+
+    public Boolean  getOnlyConfirmed(){
+        return prefs.getBoolean(PREF_KEY_ONLY_CONFIRMED, false);
+    }
+    public void     setOnlyConfirmed(Boolean x){
+        prefs.getBoolean(PREF_KEY_ONLY_CONFIRMED, x);
+    }
+
+
+
+
 
     public int      getHighestBlockSeen(){
         return prefs.getInt(PREF_KEY_HIGHEST_BLOCK_SEEN, -1);
@@ -91,7 +113,7 @@ public class Configuration {
     }
 
     public int      getMinTimeout(){
-        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 25);
+        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 15);
     }
     public void     setMinTimeout(int time) {
         prefs.edit().putInt(PREF_KEY_MIN_TIMEOUT, time).commit();
