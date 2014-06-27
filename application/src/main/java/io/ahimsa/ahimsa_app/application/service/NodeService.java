@@ -173,7 +173,7 @@ public class NodeService extends IntentService {
 
                 peerGroup.startAndWait();
                 //TODO: let application know timeout occurred
-                peerGroup.waitForPeers(minConnectedPeers).get(config.getMinTimeout(), TimeUnit.SECONDS);
+                peerGroup.waitForPeers(minConnectedPeers).get(config.getTimeout(), TimeUnit.SECONDS);
 
             }catch(Exception e){
                 e.printStackTrace();
@@ -205,7 +205,7 @@ public class NodeService extends IntentService {
         ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx), minConnectedPeers);
 
         try {
-            future.get(config.getMinTimeout(), TimeUnit.SECONDS);
+            future.get(config.getTimeout(), TimeUnit.SECONDS);
             Log.d(TAG, "Received future, success:" + future.get().toString());
 
             Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_SUCCESS);
@@ -225,6 +225,7 @@ public class NodeService extends IntentService {
         }
     }
 
+    //todo: implement ListenableFuture<Long>
     private void startBlockChainDownload()
     {
         if(peerGroup != null)
@@ -315,7 +316,7 @@ public class NodeService extends IntentService {
         intent.setAction(ACTION_NETWORK_TEST);
         context.startService(intent);
     }
-    //--------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
     //Handle intents
     protected void onHandleIntent(Intent intent){
         if (intent != null) {
@@ -351,7 +352,7 @@ public class NodeService extends IntentService {
 
         }
     }
-    //--------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
     private void handleActionBroadcastTx(byte[] tx)
     {
         initiate();
@@ -364,7 +365,9 @@ public class NodeService extends IntentService {
     {
         initiate();
         startPeerGroup(application.getBlockChain());
-        startBlockChainDownload();
+        if(peerGroup != null){
+            peerGroup.downloadBlockChain();
+        }
         stopPeerGroup();
     }
 
@@ -381,8 +384,14 @@ public class NodeService extends IntentService {
 
         if(chain.getBestChainHeight() < height){
             startPeerGroup(chain);
-            if(getPeerBestHeight() < height){
-                startBlockChainDownload();
+            Long x = getPeerBestHeight();
+            Log.d(TAG, String.format("discoverTx() | getPeerBestHeight() <= %d < height = %d", x, height));
+            if(x >= height){
+                Log.d(TAG, "discoverTx() | BEFORE startBlockChainDownload()");
+                if(peerGroup != null){
+                    peerGroup.downloadBlockChain();
+                }
+                Log.d(TAG, "discoverTx() | AFTER startBlockChainDownload()");
             } else{
                 //todo: send intent claiming block height exceeds highest in chain
             }
@@ -392,11 +401,22 @@ public class NodeService extends IntentService {
 
         List<Transaction> relevantTxs = findTxInBlock(chain.getBlockStore(), wallet, height);
         Log.d(TAG, relevantTxs.toString());
+        stopPeerGroup();
+
+        byte[][] test = {{}};
+        Intent intent = new Intent();
+        intent.putExtra("test", test);
+
+
     }
 
     private void handleNetworkTest()
     {
-
+        initiate();
+        startPeerGroup(null);
+        int count = getConnectedPeers().size();
+        Log.d(TAG, "connected peers: " + count);
+        stopPeerGroup();
 
     }
 
@@ -433,12 +453,14 @@ public class NodeService extends IntentService {
         try {
             StoredBlock current = store.getChainHead();
             if (height > current.getHeight()) {
+                Log.d(TAG, String.format("getBlock() | return null; height (%d) > current.getHeight() (%d)", height, current.getHeight()));
                 return null;
             }
-            for (int i = current.getHeight(); i >= height; i -= 1) {
+            for (int i = current.getHeight(); i > height; i -= 1) {
                 StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
                 current = previous;
             }
+            Log.d(TAG, String.format("getBlock() | return block with: hash (%s) and height (%d)", current.getHeader().getHash(), current.getHeight()));
             return current;
         } catch (BlockStoreException e) {
             Log.d(TAG, String.format("Block of height %d is not within the blockstore.", height));

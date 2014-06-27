@@ -16,7 +16,7 @@ public class Configuration {
     public static final String PREF_KEY_MAX_PEERS = "max_connected_peers";
     public static final String PREF_KEY_MIN_PEERS = "min_connected_peers";
 
-    public static final String PREF_KEY_MIN_TIMEOUT = "minimum_timeout";
+    public static final String PREF_KEY_TIMEOUT = "timeout";
     public static final String PREF_KEY_DUST_VALUE = "dust_value";
     public static final String PREF_KEY_FEE_VALUE = "fee_value";
     public static final String PREF_KEY_ONLY_CONFIRMED = "only_confirmed";
@@ -112,11 +112,11 @@ public class Configuration {
         prefs.edit().putString(PREF_KEY_DEFAULT_ADDRESS, addr).commit();
     }
 
-    public int      getMinTimeout(){
-        return prefs.getInt(PREF_KEY_MIN_TIMEOUT, 15);
+    public int      getTimeout(){
+        return prefs.getInt(PREF_KEY_TIMEOUT, 15);
     }
-    public void     setMinTimeout(int time) {
-        prefs.edit().putInt(PREF_KEY_MIN_TIMEOUT, time).commit();
+    public void     setTimeout(int time) {
+        prefs.edit().putInt(PREF_KEY_TIMEOUT, time).commit();
     }
 
     public void     reset() {
