@@ -3,15 +3,15 @@
 
     <string name="app_name">ahimsa-app</string>
 
-    <string name="title_section1">Create Bulletin</string>
-    <string name="title_section2">Past Bulletins</string>
-    <string name="title_section3">Wallet</string>
+    <string name="title_section1">Create New Bulletin</string>
+    <string name="title_section2">My Bulletins</string>
+    <string name="title_section3">Import Funding Transaction</string>
     <string name="title_section4">Settings</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-
     <string name="action_util_one">Print Wallet</string>
     <string name="action_util_two">Reset Wallet</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

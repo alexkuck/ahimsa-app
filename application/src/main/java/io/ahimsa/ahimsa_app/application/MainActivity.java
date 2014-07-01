@@ -4,6 +4,7 @@ import android.app.Activity;
 
 import android.app.ActionBar;
 import android.app.Application;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
 
+import io.ahimsa.ahimsa_app.application.fragment.ImportFundingTxFragment;
 import io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment;
 import io.ahimsa.ahimsa_app.application.service.OldNodeService;
 import io.ahimsa.ahimsa_app.application.fragment.BulletinFragment;
@@ -33,12 +35,9 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //Get application
         application = (MainApplication) getApplication();
-
         setContentView(R.layout.activity_main);
 
-        //Navigation Drawer Nonsense----------------------------------------------
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
@@ -52,26 +51,33 @@ public class MainActivity extends Activity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         FragmentManager fragmentManager = getFragmentManager();
+        Fragment fragment = null;
+        //todo do this properly, doesn't reset fragment
 
         switch (position){
-            case 1:
+            case 0:
                 mTitle = getString(R.string.title_section1);
+                fragment = new BulletinFragment();
                 break;
-            case 2:
+            case 1:
                 mTitle = getString(R.string.title_section2);
                 break;
-            case 3:
+            case 2:
                 mTitle = getString(R.string.title_section3);
+                fragment = new ImportFundingTxFragment();
                 break;
-            case 4:
+            case 3:
                 mTitle = getString(R.string.title_section4);
                 break;
 
         }
 
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, new BulletinFragment())
-                .commit();
+        if(fragment != null){
+            fragmentManager.beginTransaction()
+                    .replace(R.id.container, fragment)
+                    .commit();
+        }
+
     }
 
     //todo: you may not need this:

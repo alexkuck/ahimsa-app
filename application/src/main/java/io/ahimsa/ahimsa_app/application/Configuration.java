@@ -60,13 +60,11 @@ public class Configuration {
     }
 
     public int      getMinConnectedPeers(){
-        return prefs.getInt(PREF_KEY_MIN_PEERS, 2);
+        return prefs.getInt(PREF_KEY_MIN_PEERS, 3);
     }
-    public void     setMinConnectedPeers(int x) {
-        prefs.edit().putInt(PREF_KEY_MIN_PEERS, x).commit();
+    public void     setPrefKeyMaxPeers(int x){
+        prefs.edit().putInt(PREF_KEY_MIN_PEERS, x);
     }
-
-
 
 
     public Long     getDustValue() {

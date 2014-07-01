@@ -63,9 +63,12 @@ public class NodeService extends IntentService {
 
 
     //NodeService | Actions-------------------------------------------------------------------------
-    //Broadcast Raw Message
+    //Broadcast Transaction
     private static final String ACTION_BROADCAST_TX     = NodeService.class.getPackage().getName() + ".broadcast_transaction";
     private static final String EXTRA_TX                = NodeService.class.getPackage().getName() + ".transaction";
+
+    //Broadcast Funding Transaction
+    private static final String ACTION_BROADCAST_FUNDING_TX = NodeService.class.getPackage().getName() + ".broadcast_funding_transaction";
 
     //Sync Blockchain
     private static final String ACTION_SYNC_BLOCKCHAIN  = NodeService.class.getPackage().getName() + ".sync_blockchain";
@@ -95,8 +98,8 @@ public class NodeService extends IntentService {
         application = (MainApplication) getApplication();
         config = application.getConfig();
 
-        minConnectedPeers = config.getMinConnectedPeers();
         maxConnectedPeers = config.getMaxConnectedPeers();
+        minConnectedPeers = config.getMinConnectedPeers();
         trustedPeerHost   = config.getTrustedPeer();
 
     }
@@ -171,9 +174,18 @@ public class NodeService extends IntentService {
                     }
                 });
 
+
                 peerGroup.startAndWait();
-                //TODO: let application know timeout occurred
                 peerGroup.waitForPeers(minConnectedPeers).get(config.getTimeout(), TimeUnit.SECONDS);
+                //TODO: let application know timeout occurred
+
+
+                Log.d(TAG, "pending peers  : " + peerGroup.getPendingPeers());
+                Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());
+
+
+                int peer_best = peerGroup.getMostCommonChainHeight();
+                Log.d(TAG, "Is peerGroup.getDownloadPeer() null? " + peer_best);
 
             }catch(Exception e){
                 e.printStackTrace();
@@ -202,27 +214,50 @@ public class NodeService extends IntentService {
     {
         Log.d(TAG, "Broadcasting transaction: " + Utils.bytesToHex(tx)  );
 
-        ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx), minConnectedPeers);
+        if(peerGroup != null){
+            ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx));
 
-        try {
-            future.get(config.getTimeout(), TimeUnit.SECONDS);
-            Log.d(TAG, "Received future, success:" + future.get().toString());
+            try{
+                future.get(config.getTimeout(), TimeUnit.SECONDS);
+                Log.d(TAG, "Received future, success:" + future.get().toString());
 
-            Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_SUCCESS);
-            intent.putExtra(application.EXTRA_TX_FUTURE, future.get().bitcoinSerialize());
-            application.sendBroadcast(intent);
+                Intent intent = new Intent().setAction(application.ACTION_BROADCAST_SUCCESS);
+                intent.putExtra(application.EXTRA_TX_FUTURE, future.get().bitcoinSerialize());
+                application.sendBroadcast(intent);
 
-        } catch (Exception e){
-            Log.d(TAG, "Did not receive future, failure:" + e.toString());
+            } catch (Exception e){
+                //todo handle
+                e.printStackTrace();
+            }
 
-            e.printStackTrace();
 
-            Intent intent = new Intent().setAction(application.ACTION_BROADCAST_TX_FAILURE);
-            intent.putExtra(application.EXTRA_TX_BYTES, tx);
-            //todo: put serialized error into intent
-            intent.putExtra(application.EXTRA_EXCEPTION, e.toString());
-            application.sendBroadcast(intent);
+        } else {
+            Log.d(TAG, "Broadcast Fail, peerGroup null.");
+            //todo handle
         }
+    }
+
+    private void broadcastFundingTx(byte[] tx)
+    {
+        Log.d(TAG, "Broadcasting FUNDING transaction: " + Utils.bytesToHex(tx)  );
+
+        if(peerGroup != null){
+            ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx));
+
+            try{
+                future.get(config.getTimeout(), TimeUnit.SECONDS);
+                Log.d(TAG, "Received future, success:" + future.get().toString());
+
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+
+
+        } else {
+            Log.d(TAG, "Broadcast Fail, peerGroup null.");
+            //todo handle
+        }
+
     }
 
     //todo: implement ListenableFuture<Long>
@@ -238,7 +273,9 @@ public class NodeService extends IntentService {
 
     private Long getPeerBestHeight(){
         if(peerGroup != null){
-            return peerGroup.getDownloadPeer().getBestHeight();
+//            return  new Long(peerGroup.getMostCommonChainHeight());
+
+            return new Long(peerGroup.getDownloadPeer().getBestHeight());
         }
         return new Long(0);
     }
@@ -288,6 +325,14 @@ public class NodeService extends IntentService {
         context.startService(intent);
     }
 
+    public static void startActionBroadcastFundingTx(@Nonnull Context context, @Nonnull byte[] tx)
+    {
+        Intent intent = new Intent(context, NodeService.class);
+        intent.setAction(ACTION_BROADCAST_FUNDING_TX);
+        intent.putExtra(EXTRA_TX, tx);
+        context.startService(intent);
+    }
+
     public static void startActionSyncBlockchain(@Nonnull Context context){
         Intent intent = new Intent(context, NodeService.class);
         intent.setAction(ACTION_SYNC_BLOCKCHAIN);
@@ -302,7 +347,7 @@ public class NodeService extends IntentService {
         context.startService(intent);
     }
 
-    public static void startDiscoverTx(@Nonnull Context context, @Nonnull Long blockheight){
+    public static void startDiscoverFundingTx(@Nonnull Context context, @Nonnull Long blockheight){
         Intent intent = new Intent(context, NodeService.class);
         intent.setAction(ACTION_DISCOVER_TX);
         intent.putExtra(EXTRA_BLOCKHEIGHT, blockheight);
@@ -321,12 +366,17 @@ public class NodeService extends IntentService {
     protected void onHandleIntent(Intent intent){
         if (intent != null) {
             final String action = intent.getAction();
-            Log.d(TAG, "onHandleIntent | " + action);
+            Log.d(TAG, "NodeService | onHandleIntent | " + action);
 
             if (ACTION_BROADCAST_TX.equals(action))
             {
                 final byte[] tx = intent.getByteArrayExtra(EXTRA_TX);
                 handleActionBroadcastTx(tx);
+            }
+            else if(ACTION_BROADCAST_FUNDING_TX.equals(action))
+            {
+                final byte[] tx = intent.getByteArrayExtra(EXTRA_TX);
+                handleActionBroadcastFundingTx(tx);
             }
 
             else if(ACTION_SYNC_BLOCKCHAIN.equals(action))
@@ -361,6 +411,14 @@ public class NodeService extends IntentService {
         stopPeerGroup();
     }
 
+    private void handleActionBroadcastFundingTx(byte[] tx){
+        initiate();
+        startPeerGroup(null);
+        broadcastFundingTx(tx);
+        stopPeerGroup();
+    }
+
+
     private void handleSyncBlockchain()
     {
         initiate();
@@ -383,32 +441,58 @@ public class NodeService extends IntentService {
         Wallet wallet = application.getAhimsaWallet().getWallet();
 
         if(chain.getBestChainHeight() < height){
+            //The local chain's height less than the requested block's height.
             startPeerGroup(chain);
             Long x = getPeerBestHeight();
-            Log.d(TAG, String.format("discoverTx() | getPeerBestHeight() <= %d < height = %d", x, height));
+            Log.d(TAG, String.format("discoverTx() | getPeerBestHeight() (%d) < height = (%d)", x, height));
+
             if(x >= height){
+                //The network's height is greater than or equal to the requested block's height.
                 Log.d(TAG, "discoverTx() | BEFORE startBlockChainDownload()");
                 if(peerGroup != null){
                     peerGroup.downloadBlockChain();
                 }
                 Log.d(TAG, "discoverTx() | AFTER startBlockChainDownload()");
-            } else{
+
+            } else {
+                //The requested block's height exceeds the network's height.
                 //todo: send intent claiming block height exceeds highest in chain
+
+                //todo invalid import
+                Log.d(TAG, "Invalid import, stopping peergroup.");
+                stopPeerGroup();
+                return;
+
+
             }
-        } else{
+        } else {
+            //The local chain has the requested block.
             startPeerGroup(null);
         }
 
+        //We have a chain locally that has block header of the requested block.
         List<Transaction> relevantTxs = findTxInBlock(chain.getBlockStore(), wallet, height);
-        Log.d(TAG, relevantTxs.toString());
-        stopPeerGroup();
 
-        byte[][] test = {{}};
-        Intent intent = new Intent();
-        intent.putExtra("test", test);
+        //todo byte[][]
+        byte[][] discovered_txs = new byte[relevantTxs.size()][];
+        for(Transaction tx : relevantTxs){
+            discovered_txs[relevantTxs.indexOf(tx)] = tx.bitcoinSerialize();
+        }
+
+        for(Transaction tx : relevantTxs){
+            discovered_txs[relevantTxs.indexOf(tx)] = tx.bitcoinSerialize();
+            Intent intent = new Intent();
+            intent.setAction(application.ACTION_DISCOVERED_TX);
+            intent.putExtra(application.EXTRA_TX_BYTES, tx.bitcoinSerialize());
+            application.sendBroadcast(intent);
+        }
+
+        Log.d(TAG, "Discover Transaction | relevantTxs\n" + relevantTxs.toString());
+        stopPeerGroup();
 
 
     }
+
 
     private void handleNetworkTest()
     {
@@ -425,6 +509,8 @@ public class NodeService extends IntentService {
         // Returns all of the funding transactions in the block at this height
         StoredBlock targetBlock = getBlock(store, height);
         Sha256Hash hash = targetBlock.getHeader().getHash();
+        Log.d(TAG, "hash: " + hash);
+
 
         // we must download the full block from the network
         List<Transaction> foundTxs = new ArrayList<Transaction>();

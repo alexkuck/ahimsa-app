@@ -129,7 +129,7 @@ public class AhimsaWallet {
 
     private void requestFunding()
     {
-        AnonFundService.startActionRequestFundedTx(application, config.getFundingIP());
+//        AnonFundService.startActionRequestFundedTx(application, config.getFundingIP());
     }
 
     private void noBalance(){
@@ -140,106 +140,92 @@ public class AhimsaWallet {
 
     //----------------------------------------------------------------------------------------------
     //The Big Honkers-------------------------------------------------------------------------------
-    public void broadcastBulletin(String topic, String message)
+    public void createAndBroadcastBulletin(String topic, String message)
     {
         Log.d(TAG, String.format("Topic: %s | Message: %s", topic, message));
-
-        List<Utils.DbTxOutpoint> unspent = getAnUnspent();
-        Log.d(TAG, "unspent outpoint list: " + unspent);
+        List<TransactionOutput> unspents = getAnUnspent();
 
         try {
-            Transaction bulletin = BulletinBuilder.createTx(config, wallet, unspent, message, topic);
-            Log.d(TAG, "BULLETIN BULLETIN BULLETIN: " + Utils.bytesToHex(bulletin.bitcoinSerialize()));
-            broadcastTx(bulletin);
+            Transaction bulletin = BulletinBuilder.createTx(config, wallet, unspents, topic, message);
+            db.addBulletin(bulletin.getHashAsString(), topic, message);
+
+            // Upon successful creation of the peerGroup and an attempt at broadcast an intent is
+            // broadcast. This intent informs the application that a bulletin has been created and broadcast.
+            NodeService.startActionBroadcastTx(application, bulletin.bitcoinSerialize());
+
+            Log.d(TAG, "Bulletin txid: " + bulletin.getHashAsString());
+
         } catch (Exception e) {
+            // todo handle
             Log.d(TAG, "Unsuccessful attempt at creating bulletin: " + e.toString());
             e.printStackTrace();
         }
     }
-
-    //todo: informFundingTx()
-
     //----------------------------------------------------------------------------------------------
-    public void broadcastTx(Transaction tx) throws Exception{
-        //assuming that no returned future means network does not have transaction
-        NodeService.startActionBroadcastTx(application, tx.bitcoinSerialize());
-    }
+    public void commitConfirmedTx(Transaction tx){
+        // This function informs the database of a transaction that can be used to fund future
+        // bulletins. The transaction must be in the block chain below a target depth. All of
+        // the transaction's outputs that the wallet has keys for is treated as spendable.
 
-    public void commitTx(Transaction future){
-    //called during: successOnBroadcast and
+        // Add raw transaction to database.
+        db.addTx(tx, true);
 
-        //add transaction to wallet
-        wallet.maybeCommitTx(future);
-        save();
-
-        //flag all relevant ahimsaDB outpoints (the future's inputs) as spent
-        for(TransactionInput in : future.getInputs()){
-            String outpoint_txid = in.getOutpoint().getHash().toString();
-            Long outpoint_vout = in.getOutpoint().getIndex();
-            try{
-                db.setSpent(outpoint_txid, outpoint_vout, true);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-
-        //add all relevant future outpoints to ahimsaDB
-        for(TransactionOutput out : future.getOutputs()){
+        // Add all relevant future outpoints to ahimsaDB.
+        for(TransactionOutput out : tx.getOutputs()){
             if(out.isMine(wallet)){
-                try {
-                    db.addOutpoint(future.getHash().toString(), future.getOutputs().indexOf(out), out.getValue(), AhimsaDB.DISTRIBUTED, false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                db.addTxOut(out);
+            }
+        }
+    }
+
+    public void commitBulletinTxOuts(Transaction tx){
+        // This function asks the database to store the change outputs of the bulletin as unspent
+        // outputs. Additionally, the transaction is stored as unconfirmed.
+
+        // Add raw transaction to database.
+        db.addTx(tx, false);
+
+        // Add all relevant future outpoints to ahimsaDB.
+        for(TransactionOutput out : tx.getOutputs()){
+            if(out.isMine(wallet)){
+                db.addTxOut(out);
             }
         }
 
-        //if future was the funding transaction from https, set config flag as true.
-        if(config.getFundingTxid().equals(future.getHashAsString())){
-            config.setIsFunded(true);
-            Log.d(TAG, "getIsFunded() | " + config.getIsFunded());
+        // Flag funding outs as spent.
+        for(TransactionInput in : tx.getInputs()){
+            String previous_txid = in.getOutpoint().getHash().toString();
+            Long previous_vout = in.getOutpoint().getIndex();
+
+            db.setSpent(previous_txid, previous_vout, true);
         }
-
-        Log.d(TAG, "Successful broadcast.");
     }
 
-    public void failureOnBroadcastTx(){
-        //todo handle
-    }
+    public void confirmTx(Transaction tx){
+        // This function informs the database that one of the wallet's transaction has been included
+        // in the block chain below a target depth.
 
+        db.confirmTx(tx.getHashAsString());
+    }
 
     //----------------------------------------------------------------------------------------------
-    private void discoveredTx(Transaction tx){
-        //maybe block or blockhash
-
-
-    }
-
-    private List<Utils.DbTxOutpoint> getAnUnspent(){
+    private List<TransactionOutput> getAnUnspent(){
         //get unspent transactions from ahimsa's sqlite database sorted in descending order
-        List<Utils.DbTxOutpoint> db_unspent = db.getUnspent(config.getOnlyConfirmed());
+        List<TransactionOutput> db_unspent = db.getUnspent();
         BigInteger min = BigInteger.valueOf(config.getMinCoinNecessary());
 
-        ArrayList<Utils.DbTxOutpoint> unspent = new ArrayList<Utils.DbTxOutpoint>();
+        ArrayList<TransactionOutput> unspents = new ArrayList<TransactionOutput>();
         BigInteger bal = BigInteger.ZERO;
 
-        for(Utils.DbTxOutpoint out : db_unspent){
+        for(TransactionOutput out : db_unspent){
             if(bal.compareTo(min) >= 0)
                 break;
 
-            unspent.add(out);
-            bal = bal.add(out.value);
+            unspents.add(out);
+            bal = bal.add(out.getValue());
         }
 
-        // associate transactions from the wallet to each outpointTx
-        for(Utils.DbTxOutpoint out : unspent){
-            Transaction tx = wallet.getTransaction(new Sha256Hash(out.txid));
-            if(tx != null)
-                out.tx = tx;
-            //todo: wallet/db not in sync, must reset !!! (check for consistency before these actions?)
-        }
-
-        return unspent;
+        return unspents;
     }
 
     //----------------------------------------------------------------------------------------------
@@ -269,6 +255,7 @@ public class AhimsaWallet {
                 a +=  "----------------------------------------------------\n";
                 a +=  "DB_BALANCE: " + getBalance().toString() + "\n";
                 a +=  "CONFIG_IS_FUNDED: " + config.getIsFunded() + "\n";
+                a +=  "CONFIG_TXID: " + config.getFundingTxid() + "\n";
                 a +=  "DEFAULT_KEY: " + config.getDefaultAddress() + "\n";
                 a +=  "----------------------------------------------------\n";
 
@@ -280,7 +267,7 @@ public class AhimsaWallet {
         application.save();
     }
 
-    public ECKey getDefaultECKey()
+    public final ECKey getDefaultECKey()
     {
         String defaultaddr = config.getDefaultAddress();
 
@@ -299,7 +286,7 @@ public class AhimsaWallet {
     }
 
     //necessary for nodeservice finding relevant transactions
-    public Wallet getWallet(){
+    public final Wallet getWallet(){
         return wallet;
     }
 

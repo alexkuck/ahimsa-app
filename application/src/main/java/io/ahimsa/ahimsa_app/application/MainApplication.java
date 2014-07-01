@@ -51,11 +51,14 @@ public class MainApplication extends Application {
     public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
     public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "tx_in_coin";
 
-    public static final String ACTION_BROADCAST_TX_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_tx_success";
-    public static final String EXTRA_TX_FUTURE = MainApplication.class.getPackage().getName() + "broadcast_tx_txid";
+    public static final String ACTION_BROADCAST_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_success";
+    public static final String EXTRA_TX_FUTURE = MainApplication.class.getPackage().getName() + "future_txid";
 
-    public static final String ACTION_BROADCAST_TX_FAILURE = MainApplication.class.getPackage().getName() + "broadcast_tx_failure";
+    public static final String ACTION_BROADCAST_FAILURE = MainApplication.class.getPackage().getName() + "broadcast_failure";
     public static final String EXTRA_TX_BYTES   = MainApplication.class.getPackage().getName() + "tx_hex_bytes";
+
+    public static final String ACTION_DISCOVERED_TX = MainApplication.class.getPackage().getName() + "discovered_tx";
+    public static final String EXTRA_ARRAY_OF_TX_BYTES   = MainApplication.class.getPackage().getName() + "array_of_tx_bytes";
 
 
     //----------------------------------------------------------------------------------------------
@@ -80,8 +83,9 @@ public class MainApplication extends Application {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_HTTPS_SUCCESS);
         intentFilter.addAction(ACTION_HTTPS_FAILURE);
-        intentFilter.addAction(ACTION_BROADCAST_TX_SUCCESS);
-        intentFilter.addAction(ACTION_BROADCAST_TX_FAILURE);
+        intentFilter.addAction(ACTION_BROADCAST_SUCCESS);
+        intentFilter.addAction(ACTION_BROADCAST_FAILURE);
+        intentFilter.addAction(ACTION_DISCOVERED_TX);
         registerReceiver(serviceReceiver, intentFilter);
 
         //initialize wallet
@@ -109,6 +113,7 @@ public class MainApplication extends Application {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            Log.d(TAG, "NodeService | onHandleIntent | " + action);
             if (action != null) {
                 if (ACTION_HTTPS_SUCCESS.equals(action)) {
                     String funded_tx = intent.getStringExtra(EXTRA_TX_HEX_STRING);
@@ -119,19 +124,24 @@ public class MainApplication extends Application {
                     String e = intent.getStringExtra(EXTRA_EXCEPTION);
                     failureOnHttps(e);
                 }
-                else if (ACTION_BROADCAST_TX_SUCCESS.equals(action)){
+                else if (ACTION_BROADCAST_SUCCESS.equals(action)){
                     byte[] future = intent.getByteArrayExtra(EXTRA_TX_FUTURE);
-                    successOnBroadcastTx(future);
+                    broadcastSuccess(future);
                 }
-                else if (ACTION_BROADCAST_TX_FAILURE.equals(action)){
+                else if (ACTION_BROADCAST_FAILURE.equals(action)){
                     byte[] tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
                     intent.getSerializableExtra(EXTRA_EXCEPTION);
-                    failureOnBroadcastTx(tx);
+                    broadcastFailure(tx);
+                }
+                else if(ACTION_DISCOVERED_TX.equals(action)){
+                    byte[] discovered_tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
+                    handleDiscoveredTx(discovered_tx);
                 }
             }
         }
     };
 
+    //----------------------------------------------------------------------------------------------
     private void successOnHttps(String funded_tx, Long in_coin){
 
         Log.d(TAG, "funded_tx: " + funded_tx);
@@ -149,11 +159,13 @@ public class MainApplication extends Application {
         config.setFundingTxid(bootlegTx.getHash().toString());
 
         try{
-            ahimwall.broadcastTx(bootlegTx.toTransaction());
+            ahimwall.commitConfirmedTx(bootlegTx);
+//            NodeService.startActionBroadcastTx(this, bootlegTx.bitcoinSerialize());
+            //todo temporary
+          NodeService.startActionBroadcastFundingTx(this, bootlegTx.bitcoinSerialize());
         }catch(Exception e){
             Log.d(TAG, "Broadcast function within ahimsaWallet threw an error: " + e);
         }
-
     }
 
     private void failureOnHttps(String e){
@@ -162,22 +174,41 @@ public class MainApplication extends Application {
         //todo handle
     }
 
-    private void successOnBroadcastTx(byte[] future){
+    //----------------------------------------------------------------------------------------------
+    private void broadcastSuccess(byte[] future){
         Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
+        if(tx.getHashAsString().equals(config.getFundingTxid())){
+            config.setIsFunded(true);
+        }
 
-        Toast.makeText(this, "Successfully broadcast transaction: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
-        ahimwall.commitTx(tx);
+        ahimwall.commitBulletinTxOuts(tx);
     }
 
-    private void failureOnBroadcastTx(byte[] tx){
+    private void broadcastFailure(byte[] tx){
         Toast.makeText(this, "Failed to broadcast transaction. No further currently takes place.", Toast.LENGTH_LONG).show();
         //todo handle
     }
 
+    private void handleDiscoveredTx(byte[] discovered_tx){
+        Log.d(TAG, "discovered tx | " + Utils.bytesToHex(discovered_tx));
 
+//        ahimwall.commitConfirmedTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
+        ahimwall.confirmTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
 
+    }
 
     //----------------------------------------------------------------------------------------------
+    //FOR ZE FRAGMENTS------------------------------------------------------------------------------
+    public void createAndBroadcastBulletin(String topic, String message)
+    {
+        ahimwall.createAndBroadcastBulletin(topic, message);
+    }
+
+    public void discoverByBlockHeight(Long height)
+    {
+        NodeService.startDiscoverFundingTx(this, height);
+    }
+
     //PUBLIC METHODS--------------------------------------------------------------------------------
     public Configuration getConfig()
     {
@@ -191,17 +222,6 @@ public class MainApplication extends Application {
 
     public AbstractBlockChain getBlockChain() {
         return chain;
-    }
-
-    public void broadcastBulletin(String topic, String message)
-    {
-//        ahimwall.broadcastBulletin(topic, message);
-
-        //todo temporary
-        Long h = new Long(topic);
-        Log.d(TAG, "Discover Height: " + h);
-        NodeService.startDiscoverTx(this, h);
-
     }
 
     public void toLog(){
