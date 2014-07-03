@@ -1,5 +1,6 @@
 package io.ahimsa.ahimsa_app.application.util;
 
+import android.database.Cursor;
 import android.util.Log;
 
 import com.google.bitcoin.core.ECKey;
@@ -12,6 +13,8 @@ import com.google.bitcoin.core.Wallet;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import io.ahimsa.ahimsa_app.application.Configuration;
 import io.ahimsa.ahimsa_app.application.Constants;
@@ -129,7 +132,7 @@ public class AhimsaWallet {
 
     private void requestFunding()
     {
-//        AnonFundService.startActionRequestFundedTx(application, config.getFundingIP());
+        AnonFundService.startActionRequestFundedTx(application, config.getFundingIP());
     }
 
     private void noBalance(){
@@ -162,13 +165,22 @@ public class AhimsaWallet {
         }
     }
     //----------------------------------------------------------------------------------------------
-    public void commitConfirmedTx(Transaction tx){
+    public void maybeCommitConfirmedTx(Transaction tx, @Nullable Long highest_block){
+        // This function will only add the parameter transaction if it is not within the
+        // database.  commitConfirmedTx is called when
+
+        if( !db.hasTransaction(tx) ){
+            commitConfirmedTx(tx, highest_block);
+        }
+    }
+
+    public void commitConfirmedTx(Transaction tx, @Nullable Long highest_block){
         // This function informs the database of a transaction that can be used to fund future
         // bulletins. The transaction must be in the block chain below a target depth. All of
         // the transaction's outputs that the wallet has keys for is treated as spendable.
 
         // Add raw transaction to database.
-        db.addTx(tx, true);
+        db.addTx(tx, true, highest_block);
 
         // Add all relevant future outpoints to ahimsaDB.
         for(TransactionOutput out : tx.getOutputs()){
@@ -178,12 +190,12 @@ public class AhimsaWallet {
         }
     }
 
-    public void commitBulletinTxOuts(Transaction tx){
+    public void commitBulletin(Transaction tx, Long highest_block){
         // This function asks the database to store the change outputs of the bulletin as unspent
         // outputs. Additionally, the transaction is stored as unconfirmed.
 
         // Add raw transaction to database.
-        db.addTx(tx, false);
+        db.addTx(tx, false, highest_block);
 
         // Add all relevant future outpoints to ahimsaDB.
         for(TransactionOutput out : tx.getOutputs()){
@@ -229,6 +241,18 @@ public class AhimsaWallet {
     }
 
     //----------------------------------------------------------------------------------------------
+    public Cursor getTransactionCursor(){
+        return db.getTransactionCursor();
+    }
+
+    public Cursor getBulletinCursor() {
+        return db.getBulletinCursor();
+    }
+
+    public Cursor getTransactionOutputsCursor() {
+        return db.getTransactionOutputsCursor();
+    }
+
     //Public Methods--------------------------------------------------------------------------------
     public void toLog(){
         String ahimwall_to_string = toString();

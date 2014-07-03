@@ -2,22 +2,20 @@ package io.ahimsa.ahimsa_app.application;
 
 import android.app.Activity;
 
-import android.app.ActionBar;
-import android.app.Application;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
 
+import io.ahimsa.ahimsa_app.application.fragment.BulletinListFragment;
+import io.ahimsa.ahimsa_app.application.fragment.CreateBulletinFragment;
 import io.ahimsa.ahimsa_app.application.fragment.ImportFundingTxFragment;
 import io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment;
-import io.ahimsa.ahimsa_app.application.service.OldNodeService;
-import io.ahimsa.ahimsa_app.application.fragment.BulletinFragment;
-import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
+import io.ahimsa.ahimsa_app.application.fragment.SettingsFragment;
+import io.ahimsa.ahimsa_app.application.fragment.TransactionListFragment;
+import io.ahimsa.ahimsa_app.application.fragment.TransactionOutputListFragment;
 
 
 public class MainActivity extends Activity
@@ -57,19 +55,28 @@ public class MainActivity extends Activity
         switch (position){
             case 0:
                 mTitle = getString(R.string.title_section1);
-                fragment = new BulletinFragment();
+                fragment = new CreateBulletinFragment();
                 break;
             case 1:
                 mTitle = getString(R.string.title_section2);
+                fragment = new BulletinListFragment();
                 break;
             case 2:
                 mTitle = getString(R.string.title_section3);
-                fragment = new ImportFundingTxFragment();
+                fragment = new TransactionListFragment();
                 break;
             case 3:
                 mTitle = getString(R.string.title_section4);
+                fragment = new TransactionOutputListFragment();
                 break;
-
+            case 4:
+                mTitle = getString(R.string.title_section5);
+                fragment = new ImportFundingTxFragment();
+                break;
+            case 5:
+                mTitle = getString(R.string.title_section6);
+                fragment = new SettingsFragment();
+                break;
         }
 
         if(fragment != null){

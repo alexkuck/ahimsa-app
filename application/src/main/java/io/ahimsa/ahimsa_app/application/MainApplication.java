@@ -5,11 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.bitcoin.core.AbstractBlockChain;
+import com.google.bitcoin.core.Base58;
 import com.google.bitcoin.core.BlockChain;
 import com.google.bitcoin.core.CheckpointManager;
 import com.google.bitcoin.core.ECKey;
@@ -50,20 +52,19 @@ public class MainApplication extends Application {
 
     public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
     public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "tx_in_coin";
+    public static final String ACTION_BROADCAST_FUNDING_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_funding_success";
 
     public static final String ACTION_BROADCAST_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_success";
-    public static final String EXTRA_TX_FUTURE = MainApplication.class.getPackage().getName() + "future_txid";
+    public static final String EXTRA_TX_BYTES = MainApplication.class.getPackage().getName() + "future_txid";
+    public static final String EXTRA_HIGHEST_BLOCK_LONG = MainApplication.class.getPackage().getName() + "highest_block";
 
     public static final String ACTION_BROADCAST_FAILURE = MainApplication.class.getPackage().getName() + "broadcast_failure";
-    public static final String EXTRA_TX_BYTES   = MainApplication.class.getPackage().getName() + "tx_hex_bytes";
 
     public static final String ACTION_DISCOVERED_TX = MainApplication.class.getPackage().getName() + "discovered_tx";
-    public static final String EXTRA_ARRAY_OF_TX_BYTES   = MainApplication.class.getPackage().getName() + "array_of_tx_bytes";
-
 
     //----------------------------------------------------------------------------------------------
 
-    AhimsaWallet ahimwall;
+    private AhimsaWallet ahimwall;
 
     File walletFile;
     Wallet wallet;
@@ -83,25 +84,32 @@ public class MainApplication extends Application {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_HTTPS_SUCCESS);
         intentFilter.addAction(ACTION_HTTPS_FAILURE);
+        intentFilter.addAction(ACTION_BROADCAST_FUNDING_SUCCESS);
         intentFilter.addAction(ACTION_BROADCAST_SUCCESS);
         intentFilter.addAction(ACTION_BROADCAST_FAILURE);
         intentFilter.addAction(ACTION_DISCOVERED_TX);
         registerReceiver(serviceReceiver, intentFilter);
 
+        //initialize config
+        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
+
         //initialize wallet
         walletFile = getFileStreamPath(Constants.WALLET_FILENAME_PROTOBUF);
         loadWalletFromProtobuf();
 
-        //initialize blockchain
+        //initialize databse
+        db = new AhimsaDB(this);
+
+        //initialize and (possibly) sync blockchain
         blockStoreFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.BLOCKSTORE_FILENAME);
         if( loadBlockChain() ){
             //todo: handle false case
-//            NodeService.startActionSyncBlockchain(this);
+            if( config.syncBlockChainAtStartup()){
+                NodeService.startActionSyncBlockchain(this);
+            }
         }
 
-        //initialize config and database, initialize ahimsawallet
-        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
-        db = new AhimsaDB(this);
+        //initialize ahimsawallet
         ahimwall = new AhimsaWallet(this, wallet, db, config);
 
     }
@@ -124,9 +132,15 @@ public class MainApplication extends Application {
                     String e = intent.getStringExtra(EXTRA_EXCEPTION);
                     failureOnHttps(e);
                 }
+                else if (ACTION_BROADCAST_FUNDING_SUCCESS.equals(action)) {
+                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_BYTES);
+                    Long highest_block = intent.getLongExtra(EXTRA_HIGHEST_BLOCK_LONG, -1);
+                    broadcastFundingSuccess(future, highest_block);
+                }
                 else if (ACTION_BROADCAST_SUCCESS.equals(action)){
-                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_FUTURE);
-                    broadcastSuccess(future);
+                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_BYTES);
+                    Long highest_block = intent.getLongExtra(EXTRA_HIGHEST_BLOCK_LONG, -1);
+                    broadcastSuccess(future, highest_block);
                 }
                 else if (ACTION_BROADCAST_FAILURE.equals(action)){
                     byte[] tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
@@ -156,12 +170,9 @@ public class MainApplication extends Application {
 
         //add funding txid to configuration but DO NOT switch funded flag
         //this txid in config will be overwritten if unsuccessful broadcast
-        config.setFundingTxid(bootlegTx.getHash().toString());
+        config.setFundingTxid(bootlegTx.getHashAsString());
 
         try{
-            ahimwall.commitConfirmedTx(bootlegTx);
-//            NodeService.startActionBroadcastTx(this, bootlegTx.bitcoinSerialize());
-            //todo temporary
           NodeService.startActionBroadcastFundingTx(this, bootlegTx.bitcoinSerialize());
         }catch(Exception e){
             Log.d(TAG, "Broadcast function within ahimsaWallet threw an error: " + e);
@@ -174,39 +185,76 @@ public class MainApplication extends Application {
         //todo handle
     }
 
-    //----------------------------------------------------------------------------------------------
-    private void broadcastSuccess(byte[] future){
+    private void broadcastFundingSuccess(byte[] future, Long highest_block){
         Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
+        Toast.makeText(this, "FUNDING\nBroadcast successful, future txid: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
+
         if(tx.getHashAsString().equals(config.getFundingTxid())){
             config.setIsFunded(true);
+            ahimwall.maybeCommitConfirmedTx(tx, highest_block);
         }
+    }
 
-        ahimwall.commitBulletinTxOuts(tx);
+    //----------------------------------------------------------------------------------------------
+    private void broadcastSuccess(byte[] future, Long highest_block){
+        Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
+        Toast.makeText(this, "Broadcast successful, future txid: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
+
+        ahimwall.commitBulletin(tx, highest_block);
     }
 
     private void broadcastFailure(byte[] tx){
-        Toast.makeText(this, "Failed to broadcast transaction. No further currently takes place.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Failed to broadcast transaction. No further action currently takes place.", Toast.LENGTH_LONG).show();
         //todo handle
     }
 
     private void handleDiscoveredTx(byte[] discovered_tx){
         Log.d(TAG, "discovered tx | " + Utils.bytesToHex(discovered_tx));
-
+        ahimwall.maybeCommitConfirmedTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx), null);
+        //todo ^^^ADD BLOCK HASH ********
 //        ahimwall.commitConfirmedTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
-        ahimwall.confirmTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
+//        ahimwall.confirmTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
 
     }
 
     //----------------------------------------------------------------------------------------------
     //FOR ZE FRAGMENTS------------------------------------------------------------------------------
-    public void createAndBroadcastBulletin(String topic, String message)
-    {
+    public void createAndBroadcastBulletin(String topic, String message) {
         ahimwall.createAndBroadcastBulletin(topic, message);
     }
 
-    public void discoverByBlockHeight(Long height)
-    {
+    public void discoverByBlockHeight(Long height) {
         NodeService.startDiscoverFundingTx(this, height);
+    }
+
+    //todo: decide whether to keep these functions or have fragment interact through ahimwall
+
+    public Cursor getTransactionCursor(){
+        return ahimwall.getTransactionCursor();
+    }
+
+    public Cursor getBulletinCursor() {
+        return ahimwall.getBulletinCursor();
+    }
+
+    public Cursor getTransactionOutputsCursor() {
+        return ahimwall.getTransactionOutputsCursor();
+    }
+
+    public String getDefaultKeyAsString(){
+        return config.getDefaultAddress();
+    }
+
+    public String getBalanceAsString(){
+        return ahimwall.getBalance().toString();
+    }
+
+    public String getChainHeight() {
+        return new Integer(chain.getBestChainHeight()).toString();
+    }
+
+    public String getChainHeadHash() {
+        return chain.getChainHead().getHeader().getHashAsString();
     }
 
     //PUBLIC METHODS--------------------------------------------------------------------------------

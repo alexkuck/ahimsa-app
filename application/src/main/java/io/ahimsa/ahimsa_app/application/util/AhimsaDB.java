@@ -14,6 +14,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import io.ahimsa.ahimsa_app.application.Constants;
 import io.ahimsa.ahimsa_app.application.MainApplication;
 
@@ -23,19 +25,22 @@ import io.ahimsa.ahimsa_app.application.MainApplication;
 public class AhimsaDB {
 
     private static final String db_name = "ahimsa.db";
-    private static final String db_table_txouts = "txouts";
-    private static final String db_table_transactions = "transactions";
-    private static final String db_table_bulletins = "bulletins";
+    public static final String db_table_txouts = "txouts";
+    public static final String db_table_transactions = "transactions";
+    public static final String db_table_bulletins = "bulletins";
 
-    private static final String CREATE_TXOUTS = String.format("CREATE TABLE IF NOT EXISTS %s " +
-            "(txid STRING, vout INTEGER, value INTEGER, spent BOOLEAN, raw BLOB, PRIMARY KEY(txid, vout)," +
-            " CHECK (spent IN (0, 1)), FOREIGN KEY(txid) REFERENCES transactions(txid) );", db_table_txouts);
+    public static final String txid = "txid";
+    public static final String raw = "raw";
+    public static final String confirmed = "confirmed";
+    public static final String sent_time = "sent_time";
+    public static final String highest_block = "highest_block";
+    public static final String topic = "topic";
+    public static final String message = "message";
+    public static final String vout = "vout";
+    public static final String value = "value";
+    public static final String spent = "spent";
 
-    private static final String CREATE_TRANSACTIONS = String.format("CREATE TABLE IF NOT EXISTS %s " +
-            "(txid STRING, raw BLOB, confirmed BOOLEAN, sent_time INTEGER, PRIMARY KEY(txid), CHECK (confirmed IN (0, 1)) );", db_table_transactions);
 
-    private static final String CREATE_BULLETINS = String.format("CREATE TABLE IF NOT EXISTS %s " +
-            "(txid STRING, topic STRING, message STRING, PRIMARY KEY(TXID));", db_table_bulletins);
 
     MainApplication application;
     SQLiteDatabase db;
@@ -46,6 +51,17 @@ public class AhimsaDB {
     }
 
     private void initialize(){
+
+        final String CREATE_TXOUTS = String.format("CREATE TABLE IF NOT EXISTS %s " +
+                "(txid STRING, vout INTEGER, value INTEGER, spent BOOLEAN, raw BLOB, PRIMARY KEY(txid, vout)," +
+                " CHECK (spent IN (0, 1)), FOREIGN KEY(txid) REFERENCES transactions(txid) );", db_table_txouts);
+
+        final String CREATE_TRANSACTIONS = String.format("CREATE TABLE IF NOT EXISTS %s " +
+                "(txid STRING, raw BLOB, sent_time INTEGER, confirmed BOOLEAN, highest_block INTEGER, PRIMARY KEY(txid), CHECK (confirmed IN (0, 1)) );", db_table_transactions);
+
+        final String CREATE_BULLETINS = String.format("CREATE TABLE IF NOT EXISTS %s " +
+                "(txid STRING, topic STRING, message STRING, PRIMARY KEY(TXID));", db_table_bulletins);
+
         db = application.openOrCreateDatabase(db_name, Context.MODE_PRIVATE, null);
         db.execSQL(CREATE_TXOUTS);
         db.execSQL(CREATE_TRANSACTIONS);
@@ -53,12 +69,18 @@ public class AhimsaDB {
 
     }
 
-    public void addTx(Transaction tx, boolean confirmed){
+    public void addTx(Transaction tx, boolean tx_confirmed, @Nullable Long tx_highest_block){
         ContentValues params = new ContentValues();
-        params.put("txid", tx.getHashAsString());
-        params.put("raw", tx.bitcoinSerialize());
-        params.put("confirmed", confirmed);
-        params.put("sent_time", System.currentTimeMillis()/1000);
+        params.put(txid, tx.getHashAsString());
+        params.put(raw, tx.bitcoinSerialize());
+        params.put(sent_time, System.currentTimeMillis()/1000);
+        params.put(confirmed, tx_confirmed);
+
+        if(tx_highest_block == null) {
+            params.putNull(highest_block);
+        } else {
+            params.put(highest_block, tx_highest_block);
+        }
 
         db.insertOrThrow(db_table_transactions, null, params);
     }
@@ -106,6 +128,21 @@ public class AhimsaDB {
     }
 
     //----------------------------------------------------------------------------------------------
+    public boolean hasTransaction(Transaction tx){
+        return hasTransaction(tx.getHashAsString());
+    }
+
+    private boolean hasTransaction(String txid_arg){
+        String sql = String.format("SELECT txid FROM %s WHERE txid = ?;", db_table_transactions);
+        String[] args = {txid_arg};
+        Cursor cursor = db.rawQuery(sql, args);
+
+        if(cursor.getCount() == 0){
+            return false;
+        }
+        return true;
+    }
+
     public List<TransactionOutput> getUnspent(){
         //returns all unspent transactions
 
@@ -135,6 +172,26 @@ public class AhimsaDB {
 
         return BigInteger.ZERO;
     }
+    //----------------------------------------------------------------------------------------------
+    public Cursor getTransactionCursor(){
+        String ALL_TXS = String.format("SELECT rowid _id,* FROM %s;", db_table_transactions);
+        Cursor cursor_txs = db.rawQuery(ALL_TXS, null);
+        return cursor_txs;
+    }
+
+    public Cursor getBulletinCursor(){
+        String ALL_BULLETINS = String.format("SELECT rowid _id,* FROM %s", db_table_bulletins);
+        Cursor cursor_bulletins = db.rawQuery(ALL_BULLETINS, null);
+        return cursor_bulletins;
+    }
+
+    public Cursor getTransactionOutputsCursor(){
+        String ALL_TX_OUTPUTS = String.format("SELECT rowid _id,* FROM %s", db_table_txouts);
+        Cursor cursor_bulletins = db.rawQuery(ALL_TX_OUTPUTS, null);
+        return cursor_bulletins;
+    }
+
+
     //----------------------------------------------------------------------------------------------
     public void reset(){
         application.deleteDatabase(db_name);

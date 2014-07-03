@@ -5,13 +5,15 @@
 
     <string name="title_section1">Create New Bulletin</string>
     <string name="title_section2">My Bulletins</string>
-    <string name="title_section3">Import Funding Transaction</string>
-    <string name="title_section4">Settings</string>
+    <string name="title_section3">My Transactions</string>
+    <string name="title_section4">My Transactions Outputs</string>
+    <string name="title_section5">Import Funding Transaction</string>
+    <string name="title_section6">Settings</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="action_util_one">Print Wallet</string>
-    <string name="action_util_two">Reset Wallet</string>
+    <string name="action_util_one">Print</string>
+    <string name="action_util_two">Reset</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

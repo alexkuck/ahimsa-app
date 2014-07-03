@@ -8,6 +8,8 @@ import javax.annotation.Nonnull;
  */
 public class Configuration {
 
+    public static final String PREF_KEY_SYNC_AT_START = "sync_blockchain_at_startup";
+
     public static final String PREF_KEY_IS_FUNDED = "funded";
     public static final String PREF_FUND_TXID = "fund_txid";
     public static final String PREF_KEY_FUNDING_IP = "funding_ip";
@@ -19,7 +21,6 @@ public class Configuration {
     public static final String PREF_KEY_TIMEOUT = "timeout";
     public static final String PREF_KEY_DUST_VALUE = "dust_value";
     public static final String PREF_KEY_FEE_VALUE = "fee_value";
-    public static final String PREF_KEY_ONLY_CONFIRMED = "only_confirmed";
 
     public static final String PREF_KEY_HIGHEST_BLOCK_SEEN = "highest_block_seen";
     public static final String PREF_KEY_DEFAULT_ADDRESS = "default_address";
@@ -29,6 +30,13 @@ public class Configuration {
     private final SharedPreferences prefs;
     public Configuration(@Nonnull final SharedPreferences prefs){
         this.prefs = prefs;
+    }
+
+    public boolean  syncBlockChainAtStartup(){
+        return prefs.getBoolean(PREF_KEY_SYNC_AT_START, false);
+    }
+    public void     setSyncBlockChainAtStartup(boolean x){
+        prefs.edit().putBoolean(PREF_KEY_SYNC_AT_START, x).commit();
     }
 
 
@@ -62,7 +70,7 @@ public class Configuration {
     public int      getMinConnectedPeers(){
         return prefs.getInt(PREF_KEY_MIN_PEERS, 3);
     }
-    public void     setPrefKeyMaxPeers(int x){
+    public void     setMinConnectedPeers(int x){
         prefs.edit().putInt(PREF_KEY_MIN_PEERS, x);
     }
 
@@ -84,16 +92,6 @@ public class Configuration {
     public Long     getMinCoinNecessary(){
         return getFeeValue() + getDustValue()*((Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
     }
-
-    public Boolean  getOnlyConfirmed(){
-        return prefs.getBoolean(PREF_KEY_ONLY_CONFIRMED, false);
-    }
-    public void     setOnlyConfirmed(Boolean x){
-        prefs.getBoolean(PREF_KEY_ONLY_CONFIRMED, x);
-    }
-
-
-
 
 
     public int      getHighestBlockSeen(){

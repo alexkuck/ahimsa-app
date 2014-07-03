@@ -215,6 +215,7 @@ public class NodeService extends IntentService {
         Log.d(TAG, "Broadcasting transaction: " + Utils.bytesToHex(tx)  );
 
         if(peerGroup != null){
+            Long highest_block = getPeerBestHeight();
             ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx));
 
             try{
@@ -222,14 +223,14 @@ public class NodeService extends IntentService {
                 Log.d(TAG, "Received future, success:" + future.get().toString());
 
                 Intent intent = new Intent().setAction(application.ACTION_BROADCAST_SUCCESS);
-                intent.putExtra(application.EXTRA_TX_FUTURE, future.get().bitcoinSerialize());
+                intent.putExtra(application.EXTRA_TX_BYTES, future.get().bitcoinSerialize());
+                intent.putExtra(application.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
                 application.sendBroadcast(intent);
 
             } catch (Exception e){
                 //todo handle
                 e.printStackTrace();
             }
-
 
         } else {
             Log.d(TAG, "Broadcast Fail, peerGroup null.");
@@ -242,11 +243,18 @@ public class NodeService extends IntentService {
         Log.d(TAG, "Broadcasting FUNDING transaction: " + Utils.bytesToHex(tx)  );
 
         if(peerGroup != null){
+            Long highest_block = getPeerBestHeight();
             ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx));
 
             try{
                 future.get(config.getTimeout(), TimeUnit.SECONDS);
                 Log.d(TAG, "Received future, success:" + future.get().toString());
+
+                Intent intent = new Intent().setAction(application.ACTION_BROADCAST_FUNDING_SUCCESS);
+                intent.putExtra(application.EXTRA_TX_BYTES, future.get().bitcoinSerialize());
+                intent.putExtra(application.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
+                application.sendBroadcast(intent);
+
 
             } catch (Exception e){
                 e.printStackTrace();
@@ -257,7 +265,6 @@ public class NodeService extends IntentService {
             Log.d(TAG, "Broadcast Fail, peerGroup null.");
             //todo handle
         }
-
     }
 
     //todo: implement ListenableFuture<Long>
@@ -274,7 +281,6 @@ public class NodeService extends IntentService {
     private Long getPeerBestHeight(){
         if(peerGroup != null){
 //            return  new Long(peerGroup.getMostCommonChainHeight());
-
             return new Long(peerGroup.getDownloadPeer().getBestHeight());
         }
         return new Long(0);
@@ -473,14 +479,7 @@ public class NodeService extends IntentService {
         //We have a chain locally that has block header of the requested block.
         List<Transaction> relevantTxs = findTxInBlock(chain.getBlockStore(), wallet, height);
 
-        //todo byte[][]
-        byte[][] discovered_txs = new byte[relevantTxs.size()][];
         for(Transaction tx : relevantTxs){
-            discovered_txs[relevantTxs.indexOf(tx)] = tx.bitcoinSerialize();
-        }
-
-        for(Transaction tx : relevantTxs){
-            discovered_txs[relevantTxs.indexOf(tx)] = tx.bitcoinSerialize();
             Intent intent = new Intent();
             intent.setAction(application.ACTION_DISCOVERED_TX);
             intent.putExtra(application.EXTRA_TX_BYTES, tx.bitcoinSerialize());
@@ -519,7 +518,9 @@ public class NodeService extends IntentService {
                 Block completeBlock = peerGroup.getDownloadPeer().getBlock(hash).get();
                 for (Transaction tx : completeBlock.getTransactions()) {
                     if (isMyTx(tx, wallet)){
+                        tx.setBlockAppearance(targetBlock, true, 1);
                         foundTxs.add(tx);
+                        Log.d(TAG, "***tx.getAppearsInHashes()***\n" + tx.getAppearsInHashes().toString());
                     }
                 }
                 return foundTxs;
