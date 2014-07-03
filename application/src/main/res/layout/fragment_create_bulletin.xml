@@ -1,0 +1,88 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+
+    tools:context="io.ahimsa.ahimsa_app.application.fragment.CreateBulletinFragment">
+
+    <EditText
+        android:id="@+id/topicEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:hint="Topic"
+        android:singleLine="true"
+
+        android:text="Carl Sagan"
+        />
+
+    <EditText
+        android:id="@+id/messageEditText"
+        android:hint="Message"
+        android:minLines="8"
+        android:maxLines="8"
+        android:maxLength="140"
+
+        android:layout_below="@+id/topicEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textMultiLine"
+        android:ems="25"
+        android:layout_centerHorizontal="true"
+
+        android:text="We make our world significant by the courage of our questions and the depth of our answers."
+        />
+
+
+    <Button
+        android:id="@+id/broadcastButton"
+        android:text="Broadcast Message"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/messageEditText"
+        android:layout_centerHorizontal="true" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Confirmed Balance:"
+        android:id="@+id/confirmed_balance"
+        android:layout_above="@+id/balanceText"
+        android:layout_centerHorizontal="true" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Error"
+        android:id="@+id/balanceText"
+        android:layout_above="@+id/default_key"
+        android:layout_centerHorizontal="true" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Default Address:"
+        android:id="@+id/default_key"
+        android:layout_above="@+id/defaultKeyText"
+        android:layout_centerHorizontal="true" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Error"
+        android:id="@+id/defaultKeyText"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+
+</RelativeLayout>
