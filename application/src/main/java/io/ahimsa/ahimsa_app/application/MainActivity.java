@@ -9,13 +9,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
 
-import io.ahimsa.ahimsa_app.application.fragment.BulletinListFragment;
-import io.ahimsa.ahimsa_app.application.fragment.CreateBulletinFragment;
-import io.ahimsa.ahimsa_app.application.fragment.ImportFundingTxFragment;
-import io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment;
-import io.ahimsa.ahimsa_app.application.fragment.SettingsFragment;
-import io.ahimsa.ahimsa_app.application.fragment.TransactionListFragment;
-import io.ahimsa.ahimsa_app.application.fragment.TransactionOutputListFragment;
+import io.ahimsa.ahimsa_app.application.ui.BulletinListFragment;
+import io.ahimsa.ahimsa_app.application.ui.CreateBulletinFragment;
+import io.ahimsa.ahimsa_app.application.ui.ImportFundingTxFragment;
+import io.ahimsa.ahimsa_app.application.ui.NavigationDrawerFragment;
+import io.ahimsa.ahimsa_app.application.ui.SettingsFragment;
+import io.ahimsa.ahimsa_app.application.ui.TransactionListFragment;
+import io.ahimsa.ahimsa_app.application.ui.TransactionOutputListFragment;
 
 
 public class MainActivity extends Activity
@@ -121,7 +121,7 @@ public class MainActivity extends Activity
     }
 
     private void resetWallet(){
-        application.getAhimsaWallet().reset();
+        application.reset();
     }
 
     //-------------------------------------------------------

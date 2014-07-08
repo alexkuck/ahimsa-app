@@ -5,8 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!--<uses-permission android:name="android.permission.BROADCAST_STICKY" />-->
-    <!--<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />-->
+    <!-- <uses-permission android:name="android.permission.BROADCAST_STICKY" /> -->
+    <!-- <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /> -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -36,7 +36,11 @@
             android:exported="false" >
         </service>
         <service
-            android:name=".service.AnonFundService"
+            android:name="io.ahimsa.ahimsa_app.application.service.AnonFundService"
+            android:exported="false" >
+        </service>
+        <service
+            android:name="io.ahimsa.ahimsa_app.application.core.AhimsaService"
             android:exported="false" >
         </service>
     </application>

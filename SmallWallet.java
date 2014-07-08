@@ -1,4 +1,4 @@
-package io.ahimsa.ahimsa_app.application.util;
+package io.ahimsa.ahimsa_app.application.core;
 
 import com.google.bitcoin.core.*;
 import com.google.bitcoin.params.TestNet3Params;
@@ -9,7 +9,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.InetAddress;
-import java.util.concurrent.Future;
 
 public class SmallWallet {
     // Not really a wallet, pretty much everything else but the wallet actually

@@ -6,4 +6,4 @@
     android:divider="@android:color/transparent"
     android:dividerHeight="0dp"
     android:background="#cccc"
-    tools:context="io.ahimsa.ahimsa_app.application.fragment.NavigationDrawerFragment" />
+    tools:context="io.ahimsa.ahimsa_app.application.ui.NavigationDrawerFragment" />

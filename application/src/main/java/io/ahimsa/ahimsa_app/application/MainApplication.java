@@ -11,11 +11,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.bitcoin.core.AbstractBlockChain;
-import com.google.bitcoin.core.Base58;
 import com.google.bitcoin.core.BlockChain;
 import com.google.bitcoin.core.CheckpointManager;
 import com.google.bitcoin.core.ECKey;
-import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.store.BlockStore;
@@ -34,10 +32,10 @@ import java.math.BigInteger;
 import javax.annotation.Nonnull;
 
 import io.ahimsa.ahimsa_app.application.service.NodeService;
-import io.ahimsa.ahimsa_app.application.util.AhimsaDB;
-import io.ahimsa.ahimsa_app.application.util.AhimsaWallet;
-import io.ahimsa.ahimsa_app.application.util.BootlegTransaction;
-import io.ahimsa.ahimsa_app.application.util.Utils;
+import io.ahimsa.ahimsa_app.application.core.AhimsaDB;
+import io.ahimsa.ahimsa_app.application.core.AhimsaWallet;
+import io.ahimsa.ahimsa_app.application.core.BootlegTransaction;
+import io.ahimsa.ahimsa_app.application.core.Utils;
 
 /**
  * Created by askuck on 6/9/14.
@@ -47,21 +45,12 @@ public class MainApplication extends Application {
     //----------------------------------------------------------------------------------------------
     //Receiver Actions
     public static final String ACTION_HTTPS_SUCCESS  = MainApplication.class.getPackage().getName() + "https_success";
+    public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
+
+    //todo: tx_hex_string?
     public static final String EXTRA_TX_HEX_STRING   = MainApplication.class.getPackage().getName() + "tx_hex_string";
     public static final String EXTRA_TX_IN_COIN      = MainApplication.class.getPackage().getName() + "tx_in_coin";
-
-    public static final String ACTION_HTTPS_FAILURE  = MainApplication.class.getPackage().getName() + "https_failure";
-    public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "tx_in_coin";
-    public static final String ACTION_BROADCAST_FUNDING_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_funding_success";
-
-    public static final String ACTION_BROADCAST_SUCCESS = MainApplication.class.getPackage().getName() + "broadcast_success";
-    public static final String EXTRA_TX_BYTES = MainApplication.class.getPackage().getName() + "future_txid";
-    public static final String EXTRA_HIGHEST_BLOCK_LONG = MainApplication.class.getPackage().getName() + "highest_block";
-
-    public static final String ACTION_BROADCAST_FAILURE = MainApplication.class.getPackage().getName() + "broadcast_failure";
-
-    public static final String ACTION_DISCOVERED_TX = MainApplication.class.getPackage().getName() + "discovered_tx";
-
+    public static final String EXTRA_EXCEPTION       = MainApplication.class.getPackage().getName() + "exception";
     //----------------------------------------------------------------------------------------------
 
     private AhimsaWallet ahimwall;
@@ -80,15 +69,11 @@ public class MainApplication extends Application {
     {
         super.onCreate();
 
-        //register receiver
+        //register anonfund receiver
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_HTTPS_SUCCESS);
         intentFilter.addAction(ACTION_HTTPS_FAILURE);
-        intentFilter.addAction(ACTION_BROADCAST_FUNDING_SUCCESS);
-        intentFilter.addAction(ACTION_BROADCAST_SUCCESS);
-        intentFilter.addAction(ACTION_BROADCAST_FAILURE);
-        intentFilter.addAction(ACTION_DISCOVERED_TX);
-        registerReceiver(serviceReceiver, intentFilter);
+        registerReceiver(anonFundReceiver, intentFilter);
 
         //initialize config
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
@@ -117,11 +102,11 @@ public class MainApplication extends Application {
     //todo: low memory / shutdown handle
 
     //----------------------------------------------------------------------------------------------
-    private final BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver anonFundReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Log.d(TAG, "NodeService | onHandleIntent | " + action);
+            Log.d(TAG, "MainApplication | onHandleIntent | " + action);
             if (action != null) {
                 if (ACTION_HTTPS_SUCCESS.equals(action)) {
                     String funded_tx = intent.getStringExtra(EXTRA_TX_HEX_STRING);
@@ -132,30 +117,10 @@ public class MainApplication extends Application {
                     String e = intent.getStringExtra(EXTRA_EXCEPTION);
                     failureOnHttps(e);
                 }
-                else if (ACTION_BROADCAST_FUNDING_SUCCESS.equals(action)) {
-                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_BYTES);
-                    Long highest_block = intent.getLongExtra(EXTRA_HIGHEST_BLOCK_LONG, -1);
-                    broadcastFundingSuccess(future, highest_block);
-                }
-                else if (ACTION_BROADCAST_SUCCESS.equals(action)){
-                    byte[] future = intent.getByteArrayExtra(EXTRA_TX_BYTES);
-                    Long highest_block = intent.getLongExtra(EXTRA_HIGHEST_BLOCK_LONG, -1);
-                    broadcastSuccess(future, highest_block);
-                }
-                else if (ACTION_BROADCAST_FAILURE.equals(action)){
-                    byte[] tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
-                    intent.getSerializableExtra(EXTRA_EXCEPTION);
-                    broadcastFailure(tx);
-                }
-                else if(ACTION_DISCOVERED_TX.equals(action)){
-                    byte[] discovered_tx = intent.getByteArrayExtra(EXTRA_TX_BYTES);
-                    handleDiscoveredTx(discovered_tx);
-                }
             }
         }
     };
 
-    //----------------------------------------------------------------------------------------------
     private void successOnHttps(String funded_tx, Long in_coin){
 
         Log.d(TAG, "funded_tx: " + funded_tx);
@@ -182,52 +147,12 @@ public class MainApplication extends Application {
     private void failureOnHttps(String e){
         Toast.makeText(this, "Uh oh! The funding server did not work as expected: " + e, Toast.LENGTH_LONG).show();
         Toast.makeText(this, "But do not fear, a reattempt will automatically occur. //todo: implement automatic funding reattempt", Toast.LENGTH_LONG).show();
-        //todo handle
-    }
-
-    private void broadcastFundingSuccess(byte[] future, Long highest_block){
-        Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
-        Toast.makeText(this, "FUNDING\nBroadcast successful, future txid: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
-
-        if(tx.getHashAsString().equals(config.getFundingTxid())){
-            config.setIsFunded(true);
-            ahimwall.maybeCommitConfirmedTx(tx, highest_block);
-        }
-    }
-
-    //----------------------------------------------------------------------------------------------
-    private void broadcastSuccess(byte[] future, Long highest_block){
-        Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, future);
-        Toast.makeText(this, "Broadcast successful, future txid: " + tx.getHashAsString(), Toast.LENGTH_LONG).show();
-
-        ahimwall.commitBulletin(tx, highest_block);
-    }
-
-    private void broadcastFailure(byte[] tx){
-        Toast.makeText(this, "Failed to broadcast transaction. No further action currently takes place.", Toast.LENGTH_LONG).show();
-        //todo handle
-    }
-
-    private void handleDiscoveredTx(byte[] discovered_tx){
-        Log.d(TAG, "discovered tx | " + Utils.bytesToHex(discovered_tx));
-        ahimwall.maybeCommitConfirmedTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx), null);
-        //todo ^^^ADD BLOCK HASH ********
-//        ahimwall.commitConfirmedTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
-//        ahimwall.confirmTx(new Transaction(Constants.NETWORK_PARAMETERS, discovered_tx));
-
+            //todo handle
     }
 
     //----------------------------------------------------------------------------------------------
     //FOR ZE FRAGMENTS------------------------------------------------------------------------------
-    public void createAndBroadcastBulletin(String topic, String message) {
-        ahimwall.createAndBroadcastBulletin(topic, message);
-    }
-
-    public void discoverByBlockHeight(Long height) {
-        NodeService.startDiscoverFundingTx(this, height);
-    }
-
-    //todo: decide whether to keep these functions or have fragment interact through ahimwall
+    //todo: decide where these functions belong. MainActivity? or here?
 
     public Cursor getTransactionCursor(){
         return ahimwall.getTransactionCursor();
@@ -263,13 +188,26 @@ public class MainApplication extends Application {
         return config;
     }
 
-    public AhimsaWallet getAhimsaWallet()
-    {
-        return ahimwall;
-    }
-
     public AbstractBlockChain getBlockChain() {
         return chain;
+    }
+
+    public Wallet getKeyWallet(){
+        return ahimwall.getWallet();
+    }
+    //TODO: TEMPORARY, maybe not
+    public long getCreationTime(){
+        return wallet.getEarliestKeyCreationTime();
+    }
+
+    //todo make this an action by receiver? have application reset and have ahimsawallet reset.
+    //todo decision: what to reset? blockchain, config, ahimsawallet (wallet, db, config)
+    public void reset(){
+        ahimwall.reset();
+    }
+
+    public void makeLongToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     public void toLog(){
@@ -279,11 +217,6 @@ public class MainApplication extends Application {
         }catch (Exception e){
             Log.d(TAG, "application toLog() fail, chain blew something up: " + e.toString());
         }
-    }
-
-    //TODO: TEMPORARY, maybe not
-    public long getCreationTime(){
-        return wallet.getEarliestKeyCreationTime();
     }
 
     //----------------------------------------------------------------------------------------------

@@ -40,7 +40,8 @@ import io.ahimsa.ahimsa_app.application.Configuration;
 import io.ahimsa.ahimsa_app.application.Constants;
 import io.ahimsa.ahimsa_app.application.MainApplication;
 
-import io.ahimsa.ahimsa_app.application.util.Utils;
+import io.ahimsa.ahimsa_app.application.core.AhimsaWallet;
+import io.ahimsa.ahimsa_app.application.core.Utils;
 
 /**
  * Created by askuck on 6/9/14.
@@ -64,25 +65,14 @@ public class NodeService extends IntentService {
 
     //NodeService | Actions-------------------------------------------------------------------------
     //Broadcast Transaction
-    private static final String ACTION_BROADCAST_TX     = NodeService.class.getPackage().getName() + ".broadcast_transaction";
-    private static final String EXTRA_TX                = NodeService.class.getPackage().getName() + ".transaction";
-
-    //Broadcast Funding Transaction
-    private static final String ACTION_BROADCAST_FUNDING_TX = NodeService.class.getPackage().getName() + ".broadcast_funding_transaction";
-
-    //Sync Blockchain
+    private static final String ACTION_BROADCAST_TX     = NodeService.class.getPackage().getName() + ".broadcast_transaction";private static final String ACTION_BROADCAST_FUNDING_TX = NodeService.class.getPackage().getName() + ".broadcast_funding_transaction";
     private static final String ACTION_SYNC_BLOCKCHAIN  = NodeService.class.getPackage().getName() + ".sync_blockchain";
-
-    //Confirm Transaction
     private static final String ACTION_CONFIRM_TX       = NodeService.class.getPackage().getName() + ".confirm_tx";
-
-    //Discover Transaction
     private static final String ACTION_DISCOVER_TX      = NodeService.class.getPackage().getName() + ".discover_transaction";
-    private static final String EXTRA_BLOCKHEIGHT       = NodeService.class.getPackage().getName() + ".blockheight";
-
-    //Network Test
     private static final String ACTION_NETWORK_TEST     = NodeService.class.getPackage().getName() + ".network_test";
 
+    private static final String EXTRA_BLOCKHEIGHT       = NodeService.class.getPackage().getName() + ".blockheight";
+    private static final String EXTRA_TX                = NodeService.class.getPackage().getName() + ".transaction";
     //----------------------------------------------------------------------------------------------
     //IntentService---------------------------------------------------------------------------------
 
@@ -222,9 +212,9 @@ public class NodeService extends IntentService {
                 future.get(config.getTimeout(), TimeUnit.SECONDS);
                 Log.d(TAG, "Received future, success:" + future.get().toString());
 
-                Intent intent = new Intent().setAction(application.ACTION_BROADCAST_SUCCESS);
-                intent.putExtra(application.EXTRA_TX_BYTES, future.get().bitcoinSerialize());
-                intent.putExtra(application.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
+                Intent intent = new Intent().setAction(AhimsaWallet.ACTION_BROADCAST_SUCCESS);
+                intent.putExtra(AhimsaWallet.EXTRA_TX_BYTE_ARRAY, future.get().bitcoinSerialize());
+                intent.putExtra(AhimsaWallet.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
                 application.sendBroadcast(intent);
 
             } catch (Exception e){
@@ -250,9 +240,9 @@ public class NodeService extends IntentService {
                 future.get(config.getTimeout(), TimeUnit.SECONDS);
                 Log.d(TAG, "Received future, success:" + future.get().toString());
 
-                Intent intent = new Intent().setAction(application.ACTION_BROADCAST_FUNDING_SUCCESS);
-                intent.putExtra(application.EXTRA_TX_BYTES, future.get().bitcoinSerialize());
-                intent.putExtra(application.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
+                Intent intent = new Intent().setAction(AhimsaWallet.ACTION_BROADCAST_FUNDING_SUCCESS);
+                intent.putExtra(AhimsaWallet.EXTRA_TX_BYTE_ARRAY, future.get().bitcoinSerialize());
+                intent.putExtra(AhimsaWallet.EXTRA_HIGHEST_BLOCK_LONG, highest_block);
                 application.sendBroadcast(intent);
 
 
@@ -444,7 +434,7 @@ public class NodeService extends IntentService {
     {
         initiate();
         AbstractBlockChain chain = application.getBlockChain();
-        Wallet wallet = application.getAhimsaWallet().getWallet();
+        Wallet wallet = application.getKeyWallet();
 
         if(chain.getBestChainHeight() < height){
             //The local chain's height less than the requested block's height.
@@ -481,8 +471,8 @@ public class NodeService extends IntentService {
 
         for(Transaction tx : relevantTxs){
             Intent intent = new Intent();
-            intent.setAction(application.ACTION_DISCOVERED_TX);
-            intent.putExtra(application.EXTRA_TX_BYTES, tx.bitcoinSerialize());
+            intent.setAction(AhimsaWallet.ACTION_DISCOVERED_TX);
+            intent.putExtra(AhimsaWallet.EXTRA_TX_BYTE_ARRAY, tx.bitcoinSerialize());
             application.sendBroadcast(intent);
         }
 
