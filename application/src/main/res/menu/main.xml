@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="io.ahimsa.ahimsa_app.ui.MainActivity" >
+
+    <item android:id="@+id/action_create_bulletin"
+        android:icon="@drawable/ic_action_chat"
+        android:title="@string/action_create_bulletin"
+        android:orderInCategory="99"
+        android:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_settings"
+        android:icon="@drawable/ic_action_settings"
+        android:title="@string/action_settings"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        />
+</menu>
