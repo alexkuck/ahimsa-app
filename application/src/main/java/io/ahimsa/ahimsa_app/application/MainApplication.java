@@ -183,6 +183,11 @@ public class MainApplication extends Application {
     }
 
     //PUBLIC METHODS--------------------------------------------------------------------------------
+    public AhimsaWallet getAhimsaWallet() {
+        return ahimwall;
+    }
+
+
     public Configuration getConfig()
     {
         return config;

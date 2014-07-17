@@ -58,11 +58,6 @@ public class NodeService extends IntentService {
     private PowerManager.WakeLock wakeLock;
     private PeerGroup peerGroup;
 
-    private int minConnectedPeers;
-    private int maxConnectedPeers;
-    private String trustedPeerHost;
-
-
     //NodeService | Actions-------------------------------------------------------------------------
     //Broadcast Transaction
     private static final String ACTION_BROADCAST_TX     = NodeService.class.getPackage().getName() + ".broadcast_transaction";private static final String ACTION_BROADCAST_FUNDING_TX = NodeService.class.getPackage().getName() + ".broadcast_funding_transaction";
@@ -87,11 +82,6 @@ public class NodeService extends IntentService {
     {
         application = (MainApplication) getApplication();
         config = application.getConfig();
-
-        maxConnectedPeers = config.getMaxConnectedPeers();
-        minConnectedPeers = config.getMinConnectedPeers();
-        trustedPeerHost   = config.getTrustedPeer();
-
     }
 
     private void startPeerGroup(@Nullable AbstractBlockChain chain)
@@ -120,8 +110,8 @@ public class NodeService extends IntentService {
                 peerGroup.setUserAgent(Constants.USER_AGENT, Constants.VERSION);
 
                 Log.d(TAG, "started peergroup");
-                final boolean hasTrustedPeer = !trustedPeerHost.isEmpty();
-                peerGroup.setMaxConnections(hasTrustedPeer ? 1 : maxConnectedPeers);
+                final boolean hasTrustedPeer = !config.getTrustedPeer().isEmpty();
+                peerGroup.setMaxConnections(hasTrustedPeer ? 1 : config.getMaxConnectedPeers());
 
                 peerGroup.addPeerDiscovery(new PeerDiscovery()
                 {
@@ -136,9 +126,9 @@ public class NodeService extends IntentService {
 
                         if (hasTrustedPeer)
                         {
-                            Log.d(TAG, "trusted peer '" + trustedPeerHost + "'" + (hasTrustedPeer ? " only" : ""));
+                            Log.d(TAG, "trusted peer '" + config.getTrustedPeer() + "'" + (hasTrustedPeer ? " only" : ""));
 
-                            final InetSocketAddress addr = new InetSocketAddress(trustedPeerHost, Constants.NETWORK_PARAMETERS.getPort());
+                            final InetSocketAddress addr = new InetSocketAddress(config.getTrustedPeer(), Constants.NETWORK_PARAMETERS.getPort());
                             if (addr.getAddress() != null)
                             {
                                 peers.add(addr);
@@ -151,7 +141,7 @@ public class NodeService extends IntentService {
 
                         // workaround because PeerGroup will shuffle peers
                         if (needsTrimPeersWorkaround)
-                            while (peers.size() >= maxConnectedPeers)
+                            while (peers.size() >= config.getMaxConnectedPeers())
                                 peers.remove(peers.size() - 1);
 
                         return peers.toArray(new InetSocketAddress[0]);
@@ -166,7 +156,7 @@ public class NodeService extends IntentService {
 
 
                 peerGroup.startAndWait();
-                peerGroup.waitForPeers(minConnectedPeers).get(config.getTimeout(), TimeUnit.SECONDS);
+                peerGroup.waitForPeers(config.getMinConnectedPeers()).get(config.getTimeout(), TimeUnit.SECONDS);
                 //TODO: let application know timeout occurred
 
 

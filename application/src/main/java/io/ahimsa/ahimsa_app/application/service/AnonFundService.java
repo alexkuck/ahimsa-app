@@ -36,6 +36,7 @@ public class AnonFundService extends IntentService {
     //Requets Funded Transaction
     private static final String ACTION_REQUEST_FUNDED_TX = NodeService.class.getPackage().getName() + ".request_funded_tx";
     private static final String EXTRA_URL = NodeService.class.getPackage().getName() + ".url";
+//    private static final String EXTRA_ADDRESS =
 
     //--------------------------------------------------------------------------------
     public AnonFundService() {
@@ -59,6 +60,7 @@ public class AnonFundService extends IntentService {
             if(ACTION_REQUEST_FUNDED_TX.equals(action))
             {
                 String url = intent.getStringExtra(EXTRA_URL);
+//                String address = intent.getStringExtra(EXTRA_ADDRESS);
                 requestFundedTx(url);
             }
         }
@@ -69,6 +71,7 @@ public class AnonFundService extends IntentService {
         //todo: add to constants/config
         Map<String,String> httpParams = new HashMap<String,String>(1);
         httpParams.put("Secret", "bilbo has the ring");
+//        httpParams.put("Address", );
 
 
         try {

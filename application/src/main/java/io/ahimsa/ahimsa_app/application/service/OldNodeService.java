@@ -161,7 +161,7 @@ public class OldNodeService extends Service {
     }
 
     //-------------------------------------------------------
-    //Node Functions
+    //BitcoinNode Functions
 
     private final BroadcastReceiver connectivityReceiver = new BroadcastReceiver(){
         private boolean hasConnectivity;
