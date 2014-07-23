@@ -16,6 +16,7 @@ import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
+import io.ahimsa.ahimsa_app.core.Utils;
 
 
 public class CreateBulletinFragment extends Fragment {
@@ -29,7 +30,6 @@ public class CreateBulletinFragment extends Fragment {
     private int msg_count;
     private int top_count;
 
-    public static String EXTRA_LONG_ESTIMATED_COST = "long_estimated_cost";
     public static String EXTRA_STRING_TOPIC = "string_topic";
     public static String EXTRA_STRING_MESSAGE = "string_estimated_cost";
 
@@ -101,12 +101,8 @@ public class CreateBulletinFragment extends Fragment {
     private void setEstimatedCost() {
         int x = (top_count + msg_count) % Constants.CHAR_PER_OUT;
         if(x == 0 || x == 1 || x == 19) {
-            estimatedCost.setText(String.valueOf( getEstimatedCost() ));
+            estimatedCost.setText(String.valueOf(Utils.getEstimatedCost(config.getFeeValue(), config.getDustValue(), top_count, msg_count)));
         }
-    }
-
-    private long getEstimatedCost() {
-        return config.getFeeValue() + config.getDustValue() * (((top_count + msg_count - 2)+ Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
     }
 
     public void updateView(Bundle args) {
@@ -122,7 +118,7 @@ public class CreateBulletinFragment extends Fragment {
                 address_value.setText(address.substring(1,9));
             }
 
-            Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_CONF_BAL);
+            Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_CONF_BAL_NO_PEND);
             final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_balance_value);
             confirmed_value.setText(confirmed_balance.toString());
 
@@ -141,9 +137,10 @@ public class CreateBulletinFragment extends Fragment {
     public Bundle getBulletinBundle() {
         Bundle bundle_of_fun = new Bundle();
 
-        bundle_of_fun.putLong(EXTRA_LONG_ESTIMATED_COST, getEstimatedCost());
-        bundle_of_fun.putString(EXTRA_STRING_TOPIC, getView().findViewById(R.id.topic_edit_text).toString());
-        bundle_of_fun.putString(EXTRA_STRING_MESSAGE, getView().findViewById(R.id.message_edit_text).toString());
+        EditText topic_edit = (EditText) getView().findViewById(R.id.topic_edit_text);
+        EditText message_edit = (EditText) getView().findViewById(R.id.message_edit_text);
+        bundle_of_fun.putString(EXTRA_STRING_TOPIC, topic_edit.getText().toString());
+        bundle_of_fun.putString(EXTRA_STRING_MESSAGE, message_edit.getText().toString());
 
         return bundle_of_fun;
     }

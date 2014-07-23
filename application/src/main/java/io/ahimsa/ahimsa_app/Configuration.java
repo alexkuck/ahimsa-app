@@ -39,12 +39,12 @@ public class Configuration {
 
 
     // AhimsaWallet --------------------------------------------------------------------------------
-    public Long     getTempConfBalance() {
-        return prefs.getLong(PREF_KEY_TEMP_CONF_BALANCE, 0);
-    }
-    public void setTempConfBalance(Long x) {
-        prefs.edit().putLong(PREF_KEY_TEMP_CONF_BALANCE, x).commit();
-    }
+//    public Long     getTempConfBalance() {
+//        return prefs.getLong(PREF_KEY_TEMP_CONF_BALANCE, 0);
+//    }
+//    public void setTempConfBalance(Long x) {
+//        prefs.edit().putLong(PREF_KEY_TEMP_CONF_BALANCE, x).commit();
+//    }
 
 
     // Funding -------------------------------------------------------------------------------------

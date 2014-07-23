@@ -14,14 +14,9 @@ import io.ahimsa.ahimsa_app.Constants;
  */
 public class Utils {
 
-    public static ECKey importKey(String privkey) throws Exception {
-        //only accepts a very specific type of address. from dumpprivkey functionality in Bitcoin core.
-        DumpedPrivateKey dump = new DumpedPrivateKey(Constants.NETWORK_PARAMETERS, privkey);
-        return dump.getKey();
-        // ECKey key = dump.getKey();
-        // return key.toAddress(NETWORK_PARAMETERS);
-        // return key.getPubKey();
-
+    //TODO MAJOR | make this robust
+    public static long getEstimatedCost(Long fee, Long dust, int top_count, int msg_count) {
+        return fee + dust * (((top_count + msg_count - 2)+ Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
     }
 
     public static byte[] hexToBytes(String s)
@@ -48,6 +43,7 @@ public class Utils {
         return new String(hexChars);
     }
 
+    //----------------------------------------------------------------------------------------------
     public static BigInteger satoshiToSelf(Transaction tx, Long in_coin, Long _fee)
     {
         BigInteger in  = BigInteger.valueOf(in_coin);
@@ -55,6 +51,16 @@ public class Utils {
         BigInteger fee = BigInteger.valueOf(_fee);
 
         return in.subtract(out).subtract(fee);
+    }
+
+    public static ECKey importKey(String privkey) throws Exception {
+        //only accepts a very specific type of address. from dumpprivkey functionality in Bitcoin core.
+        DumpedPrivateKey dump = new DumpedPrivateKey(Constants.NETWORK_PARAMETERS, privkey);
+        return dump.getKey();
+        // ECKey key = dump.getKey();
+        // return key.toAddress(NETWORK_PARAMETERS);
+        // return key.getPubKey();
+
     }
 
 }

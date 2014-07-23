@@ -38,7 +38,10 @@ public class AhimsaDB {
     public static final String fee = "fee";
     public static final String vout = "vout";
     public static final String value = "value";
+    public static final String status = "status";
+    public static final String unspent = "unspent";
     public static final String spent = "spent";
+    public static final String pending = "pending";
 
     AhimsaApplication application;
     SQLiteDatabase db;
@@ -49,10 +52,9 @@ public class AhimsaDB {
     }
 
     private void initialize(){
-
         final String CREATE_TXOUTS = String.format("CREATE TABLE IF NOT EXISTS %s " +
-                "(txid STRING, vout INTEGER, value INTEGER, spent BOOLEAN, raw BLOB, PRIMARY KEY(txid, vout)," +
-                " CHECK (spent IN (0, 1)), FOREIGN KEY(txid) REFERENCES transactions(txid) );", db_table_txouts);
+                "(txid STRING, vout INTEGER, value INTEGER, status VARCHAR(7), raw BLOB, PRIMARY KEY(txid, vout)," +
+                " CHECK (status IN ('unspent', 'spent', 'pending')), FOREIGN KEY(txid) REFERENCES transactions(txid) );", db_table_txouts);
 
         final String CREATE_TRANSACTIONS = String.format("CREATE TABLE IF NOT EXISTS %s " +
                 "(txid STRING, raw BLOB, sent_time INTEGER, confirmed BOOLEAN, highest_block INTEGER, PRIMARY KEY(txid), CHECK (confirmed IN (0, 1)) );", db_table_transactions);
@@ -101,7 +103,7 @@ public class AhimsaDB {
         params.put(this.vout, parent.getOutputs().indexOf(out));
         params.put(this.value, out.getValue().longValue());
         params.put(this.raw, out.bitcoinSerialize());
-        params.put(this.spent, false);
+        params.put(this.status, this.unspent);
 
         db.insertOrThrow(db_table_txouts, null, params);
     }
@@ -116,9 +118,21 @@ public class AhimsaDB {
         db.update(db_table_transactions, param, where, whereArgs);
     }
 
-    public void setSpent(String txid, Long vout, boolean spent) {
+    public void setStatusSpent(String txid, Long vout) {
+        setStatus(txid, vout, this.spent);
+    }
+
+    public void setStatusUnspent(String txid, Long vout) {
+        setStatus(txid, vout, this.unspent);
+    }
+
+    public void setStatusPending(String txid, Long vout) {
+        setStatus(txid, vout, this.pending);
+    }
+
+    private void setStatus(String txid, Long vout, String status) {
         ContentValues param = new ContentValues();
-        param.put(this.spent, spent);
+        param.put(this.status, status);
 
         String where = "(txid == ? AND vout == CAST(? AS INTEGER))";
         String[] whereArgs = {txid, vout.toString()};
@@ -146,31 +160,93 @@ public class AhimsaDB {
         //todo necessary?
         //regardless, should implement..
 
-        return new Transaction(Constants.NETWORK_PARAMETERS);
+        return null;
+    }
+    //----------------------------------------------------------------------------------------------
+    // todo add pending functionality. you can do it!
+
+    public void reserveTxOuts(Long min_coin_necessary){
+        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid" +
+                "WHERE transactions.confirmed == 1 AND txouts.status == 'unspent' ORDER BY txouts.value DESC;";
+
+        Long min = min_coin_necessary;
+        Long bal = new Long(0);
+
+        Cursor cursor = db.rawQuery(sql, null);
+        while(cursor.moveToNext()) {
+            // 0~txid (string) | 1~vout (integer) | 2~value (integer)
+            if(bal >= min) {
+                break;
+            }
+            bal += cursor.getLong(2);
+            setStatusPending(cursor.getString(0), cursor.getLong(1));
+        }
     }
 
+    public void unreserveTxOuts(Long min_coin_necessary){
+        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid" +
+                "WHERE transactions.confirmed == 1 AND txouts.status == 'pending' ORDER BY txouts.value ASC";
 
-    public List<TransactionOutput> getUnspent(){
-        //return all confirmed and unspent transaction outputs
+        Long min = min_coin_necessary;
+        Long bal = new Long(0);
+
+        Cursor cursor = db.rawQuery(sql, null);
+        while(cursor.moveToNext()) {
+            // 0~txid (string) | 1~vout (integer) | 2~value (integer)
+            if(bal >= min) {
+                break;
+            }
+            bal += cursor.getLong(2);
+            setStatusUnspent(cursor.getString(0), cursor.getLong(1));
+        }
+    }
+
+    public List<TransactionOutput> getUnspentOutputs(Long min_coin_necessary){
+        //get unspent transactions sorted in descending order
+        List<TransactionOutput> db_unspent = getAllUnspentOutputs();
+        BigInteger min = BigInteger.valueOf(min_coin_necessary);
+
+        ArrayList<TransactionOutput> unspents = new ArrayList<TransactionOutput>();
+        BigInteger bal = BigInteger.ZERO;
+
+        for(TransactionOutput out : db_unspent){
+            if(bal.compareTo(min) >= 0)
+                break;
+
+            unspents.add(out);
+            bal = bal.add(out.getValue());
+        }
+
+        return unspents;
+    }
+
+    //----------------------------------------------------
+    public List<TransactionOutput> getAllUnspentOutputs(){
+        //return all confirmed and unspent/pending transaction outputs in descending order by value
 
         String sql = "SELECT txouts.raw, transactions.raw FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                "WHERE transactions.confirmed == 1 AND txouts.spent == 0;";
+                "WHERE transactions.confirmed == 1 AND (txouts.status == 'unspent' OR txouts.status == 'pending') ORDER BY txouts.value DESC;";
 
         Cursor cursor = db.rawQuery(sql, null);
         ArrayList<TransactionOutput> result = new ArrayList<TransactionOutput>();
 
         while(cursor.moveToNext()){
             Transaction txFromDb = new Transaction(Constants.NETWORK_PARAMETERS, cursor.getBlob(1));
-            // todo make efficient
             result.add( new TransactionOutput(Constants.NETWORK_PARAMETERS, txFromDb, cursor.getBlob(0), 0));
         }
 
         return result;
     }
 
-    public BigInteger getConfirmedBalance(){
-        String SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                "WHERE txouts.spent == 0 AND transactions.confirmed == 1;");
+    public BigInteger getConfirmedBalance(boolean include_pending){
+        String SUM;
+        if(include_pending){
+            SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
+                    "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 1;");
+        } else {
+            SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
+                    "WHERE (txouts.status == 'unspent') AND transactions.confirmed == 1;");
+        }
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
@@ -179,11 +255,10 @@ public class AhimsaDB {
 
         return BigInteger.ZERO;
     }
-
 
     public BigInteger getUnconfirmedBalance(){
         String SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                "WHERE txouts.spent == 0 AND transactions.confirmed == 0;");
+                "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 0;");
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
@@ -192,7 +267,6 @@ public class AhimsaDB {
 
         return BigInteger.ZERO;
     }
-
 
     //----------------------------------------------------------------------------------------------
     public Cursor getTransaction(){
@@ -233,16 +307,16 @@ public class AhimsaDB {
         return cursor;
     }
 
-    public Cursor getConfirmedAndUnspentTxouts() {
+    public Cursor getConfirmedAndUnspentTxOuts() {
         String ALL_CONF_AND_UNSP_TXOUTS = String.format("SELECT * FROM txouts JOIN transactions " +
-                "ON transactions.txid == txouts.txid WHERE txouts.spent == 0 AND transactions.confirmed == 1");
+                "ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent' AND transactions.confirmed == 1");
         Cursor cursor = db.rawQuery(ALL_CONF_AND_UNSP_TXOUTS, null);
         return cursor;
     }
 
-    public Cursor getUnconfirmedAndUnspentTxouts() {
+    public Cursor getUnconfirmedAndUnspentTxOuts() {
         String ALL_UNCONF_AND_UNSP_TXOUTS = String.format("SELECT * FROM txouts JOIN transactions " +
-                "ON transactions.txid == txouts.txid WHERE txouts.spent == 0 AND transactions.confirmed == 0");
+                "ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent' AND transactions.confirmed == 0");
         Cursor cursor = db.rawQuery(ALL_UNCONF_AND_UNSP_TXOUTS, null);
         return cursor;
     }

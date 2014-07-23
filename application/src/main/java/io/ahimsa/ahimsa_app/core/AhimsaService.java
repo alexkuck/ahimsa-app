@@ -89,9 +89,27 @@ public class AhimsaService extends IntentService {
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        instantiate();
+
+        if (ACTION_BROADCAST_BULLETIN.equals( intent.getAction() )) {
+            // todo | think this through decide on best implementation.
+//            final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
+//            final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
+//            final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
+//            ahimwall.reserveTxOuts(topic, message, fee);
+
+            ahimwall.reserveTxOuts();
+            broadcastUpdateIntent();
+        }
+
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
-            commence(intent);
+            Log.d(TAG, "Commencing AhimsaService, action | " + intent.getAction());
             final String action = intent.getAction();
 
             if (ACTION_VERIFY_AHIMSA_WALLET.equals(action)) {
@@ -119,30 +137,26 @@ public class AhimsaService extends IntentService {
                 handleImportBlock(height);
             }
 
-            complete(intent);
+            broadcastUpdateIntent();
+            Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
+        }
+    }
+    //----------------------------------------------------------------------------------------------
+    private void instantiate()
+    {
+        if(application == null)
+        {
+            application = (AhimsaApplication) getApplication();
+            ahimwall = application.getAhimsaWallet();
         }
     }
 
-    private void commence(Intent intent)
+    private void broadcastUpdateIntent()
     {
-        application = (AhimsaApplication) getApplication();
-        ahimwall = application.getAhimsaWallet();
-
-        Log.d(TAG, "Commencing AhimsaService, action | " + intent.getAction());
-    }
-
-    private void complete(Intent intent)
-    {
-        application.getConfig().setTempConfBalance(ahimwall.getConfirmedBalance().longValue());
-
         Intent update_intent = new Intent();
         update_intent.setAction(Constants.ACTION_AHIMWALL_UPDATE);
         LocalBroadcastManager.getInstance(this).sendBroadcast(update_intent);
-
-        Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
-
     }
-
     //----------------------------------------------------------------------------------------------
     private void handleVerifyAhimsaWallet() {
         ahimwall.verifyKeyStore();
@@ -163,7 +177,15 @@ public class AhimsaService extends IntentService {
 
     private void handleResetAhimsaWallet() {
         // Reset then re-initialization config, database, and keyStore.
-        ahimwall.reset();
+//        ahimwall.reset();
+
+        Log.d(TAG, "before sleeper 5000");
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "after sleeper 5000");
     }
 
 
@@ -188,6 +210,7 @@ public class AhimsaService extends IntentService {
             ahimwall.commitTransaction(bulletin, highest_block, false);
 //            application.makeLongToast("Woot woot! Successfully broadcast bulletin: " + bulletin.getHashAsString());
         } catch (Exception e) {
+            //todo unreserve txouts
 //            application.makeLongToast("Fail: could not broadcast bulletin.");
             e.printStackTrace();
         } finally {
@@ -210,6 +233,7 @@ public class AhimsaService extends IntentService {
 
         } catch (Exception e) {
 //            application.makeLongToast("Fail: could not broadcast bulletin.");
+            //todo unreserve txouts
             e.printStackTrace();
         } finally {
             node.stopPeerGroup();

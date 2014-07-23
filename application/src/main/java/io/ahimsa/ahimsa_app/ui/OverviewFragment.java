@@ -100,12 +100,12 @@ public class OverviewFragment extends Fragment {
 
     protected void updateView(View v, Bundle args) {
         if(v != null){
-            final TextView address_value = (TextView) v.findViewById(R.id.address_value);
+            final TextView address_eight_value = (TextView) v.findViewById(R.id.address_value);
             final TextView checksum_value = (TextView) v.findViewById(R.id.checksum_value);
 
             String address = args.getString(Constants.EXTRA_STRING_ADDRESS);
             if(address.length() > 8) {
-                address_value.setText(address.substring(1,9));
+                address_eight_value.setText(address.substring(1,9));
                 checksum_value.setText(address.substring(address.length()-4));
             }
 

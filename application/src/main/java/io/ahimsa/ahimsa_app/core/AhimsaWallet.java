@@ -45,9 +45,22 @@ public class AhimsaWallet {
     }
 
     // public utilities-----------------------------------------------------------------------------
+    public void reserveTxOuts()
+    {
+        // implement cost_estimation instead of flat max rate?
+        // Long estimate_cost = Utils.getEstimatedCost(fee, config.getDustValue(), topic.length(), message.length());
+
+        db.reserveTxOuts(config.getMinCoinNecessary());
+    }
+
+    public void unreserveTxOuts()
+    {
+        db.unreserveTxOuts(config.getMinCoinNecessary());
+    }
+
     public Transaction createAndAddBulletin(String topic, String message, Long fee) throws Exception
     {
-        List<TransactionOutput> unspents = getAnUnspent();
+        List<TransactionOutput> unspents = db.getUnspentOutputs(config.getMinCoinNecessary());
         Transaction bulletin = BulletinBuilder.createTx(config, keyStore, unspents, topic, message);
         db.addBulletin(bulletin.getHashAsString(), topic, message, fee);
         return bulletin;
@@ -74,29 +87,10 @@ public class AhimsaWallet {
                 String previous_txid = in.getOutpoint().getHash().toString();
                 Long previous_vout = in.getOutpoint().getIndex();
 
-                db.setSpent(previous_txid, previous_vout, true);
+                db.setStatusSpent(previous_txid, previous_vout);
             }
         }
     }
-
-//    public void commitConfirmedTx(Transaction tx, Long highest_block)
-//    {
-//        // This function informs the database of a transaction that can be used to fund future
-//        // bulletins. The transaction must be in the block chain below a target depth. All of
-//        // the transaction's outputs that the wallet has keys for is treated as spendable.
-//
-//        if ( !db.hasTransaction(tx) ){
-//            // Add raw transaction to database.
-//            db.addTx(tx, true, highest_block);
-//
-//            // Add all relevant future outpoints to ahimsaDB.
-//            for(TransactionOutput out : tx.getOutputs()){
-//                if(out.isMine(keyStore)){
-//                    db.addTxOut(out);
-//                }
-//            }
-//        }
-//    }
 
     public void confirmTx(Transaction tx)
     {
@@ -137,9 +131,9 @@ public class AhimsaWallet {
         verifyKeyStore();
     }
 
-    public BigInteger getConfirmedBalance()
+    public BigInteger getConfirmedBalance(boolean include_pending)
     {
-        return db.getConfirmedBalance();
+        return db.getConfirmedBalance(include_pending);
     }
 
     public Bundle getUpdateBundle() {
@@ -149,35 +143,17 @@ public class AhimsaWallet {
         update_bundle.putInt(Constants.EXTRA_INT_UNCONF, db.getUnconfirmedTxs().getCount());
         update_bundle.putInt(Constants.EXTRA_INT_DRAFT, db.getDraftTx().getCount());
 
-        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL, db.getConfirmedBalance().longValue());
+        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL_NO_PEND, db.getConfirmedBalance(false).longValue());
+        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL_YES_PEND, db.getConfirmedBalance(true).longValue());
         update_bundle.putLong(Constants.EXTRA_LONG_UNCONF_BAL, db.getUnconfirmedBalance().longValue());
-        update_bundle.putInt(Constants.EXTRA_INT_CONF_TXOUTS, db.getConfirmedAndUnspentTxouts().getCount());
-        update_bundle.putInt(Constants.EXTRA_INT_UNCONF_TXOUTS, db.getUnconfirmedAndUnspentTxouts().getCount());
+        update_bundle.putInt(Constants.EXTRA_INT_CONF_TXOUTS, db.getConfirmedAndUnspentTxOuts().getCount());
+        update_bundle.putInt(Constants.EXTRA_INT_UNCONF_TXOUTS, db.getUnconfirmedAndUnspentTxOuts().getCount());
 
         return update_bundle;
     }
 
 
     // private utilities----------------------------------------------------------------------------
-    private List<TransactionOutput> getAnUnspent(){
-        //get unspent transactions from ahimsa's sqlite database sorted in descending order
-        List<TransactionOutput> db_unspent = db.getUnspent();
-        BigInteger min = BigInteger.valueOf(config.getMinCoinNecessary());
-
-        ArrayList<TransactionOutput> unspents = new ArrayList<TransactionOutput>();
-        BigInteger bal = BigInteger.ZERO;
-
-        for(TransactionOutput out : db_unspent){
-            if(bal.compareTo(min) >= 0)
-                break;
-
-            unspents.add(out);
-            bal = bal.add(out.getValue());
-        }
-
-        return unspents;
-    }
-
     private void saveKeyStore()
     {
         try {
@@ -271,7 +247,7 @@ public class AhimsaWallet {
         a +=  "----------------------Database----------------------\n";
         a +=  db.toString() + "\n";
         a +=  "----------------------------------------------------\n";
-        a +=  "DB_BALANCE: " + getConfirmedBalance().toString() + "\n";
+        a +=  "DB_BALANCE: " + db.getConfirmedBalance(true).toString() + "\n";
         a +=  "CONFIG_IS_FUNDED: " + config.getIsFunded() + "\n";
         a +=  "CONFIG_TXID: " + config.getFundingTxid() + "\n";
         a +=  "DEFAULT_KEY: " + config.getDefaultAddress() + "\n";

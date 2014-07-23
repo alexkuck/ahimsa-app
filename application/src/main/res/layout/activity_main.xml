@@ -5,5 +5,5 @@
     android:id="@+id/viewPager"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="io.ahimsa.ahimsa_app.ui.MainActivity"
+    tools:context="io.ahimsa.ahimsa_app.ui.AhimsaActivity"
     />

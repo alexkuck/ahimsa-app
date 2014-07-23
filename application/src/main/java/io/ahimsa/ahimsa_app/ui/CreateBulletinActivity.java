@@ -17,6 +17,7 @@ import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
+import io.ahimsa.ahimsa_app.core.Utils;
 
 public class CreateBulletinActivity extends Activity {
 
@@ -84,22 +85,22 @@ public class CreateBulletinActivity extends Activity {
         if (id == R.id.action_broadcast_bulletin) {
 
             Bundle bulletin_bundle = frag.getBulletinBundle();
-            long estimated_cost  = bulletin_bundle.getLong(frag.EXTRA_LONG_ESTIMATED_COST);
             String topic   = bulletin_bundle.getString(frag.EXTRA_STRING_TOPIC);
             String message = bulletin_bundle.getString(frag.EXTRA_STRING_MESSAGE);
 
-            Log.d("createdBulletinActivity", "estimated cost: " + estimated_cost);
-            Log.d("createdBulletinActivity", "confirmed bala: " + config.getTempConfBalance());
+            Long estimate = Utils.getEstimatedCost(config.getFeeValue(), config.getDustValue(), topic.length(), message.length());
+            Log.d("createdBulletinActivity", "estimated cost: " + estimate);
+//            Log.d("createdBulletinActivity", "confirmed bala: " + config.getTempConfBalance());
 
             // TODO MAJOR | prevent back-to-back bulletin creation
             // TODO MAJOR | use tempory array of txout values, remove txout-value when bulletin submitted
             // TODO MAJOR | refresh this array of txout-vals after each ahimsa_service completion
-            if(estimated_cost <= config.getTempConfBalance()){
-                config.setTempConfBalance( config.getTempConfBalance() - estimated_cost);
+//            if(estimated_cost <= config.getTempConfBalance()){
+//                config.setTempConfBalance( config.getTempConfBalance() - estimated_cost);
                 AhimsaService.startBroadcastBulletin(this, topic, message, config.getFeeValue());
-            } else {
-                Toast.makeText(this, R.string.toast_insufficient_funds, Toast.LENGTH_LONG).show();
-            }
+//            } else {
+//                Toast.makeText(this, R.string.toast_insufficient_funds, Toast.LENGTH_LONG).show();
+//            }
 
             return true;
         }
