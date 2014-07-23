@@ -43,13 +43,13 @@ public class OverviewFragment extends Fragment {
                 final View inflater = layout_inflater.inflate(R.layout.dialog_import, null);
                 AlertDialog.Builder builer = new AlertDialog.Builder(getActivity());
 
-                builer.setTitle("Import Block");
-                builer.setMessage("Discover and import relevant funding transactions.");
+                builer.setTitle("Import a Block");
+                builer.setMessage("This little popup will discover all relevant funding transactions within a block.");
                 builer.setView(inflater);
 
                 final EditText heightEditText = (EditText) inflater.findViewById(R.id.height_edit_text);
 
-                builer.setPositiveButton(R.string.impport, new DialogInterface.OnClickListener() {
+                builer.setPositiveButton("Magic!", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 try {
                                     Long height = new Long( heightEditText.getText().toString() );
@@ -117,6 +117,9 @@ public class OverviewFragment extends Fragment {
 
             final TextView draft_value = (TextView) v.findViewById(R.id.draft_value);
             draft_value.setText(new Integer(args.getInt(Constants.EXTRA_INT_DRAFT)).toString());
+
+            final TextView unreserved_balance = (TextView) v.findViewById(R.id.unreserved_balance_value);
+            unreserved_balance.setText(new Long(args.getLong(Constants.EXTRA_LONG_UNRESERVED_CONF_BAL)).toString());
 
             final TextView confirmed_balance = (TextView) v.findViewById(R.id.confirmed_balance_value);
             String conf = String.format("%s (%s)",

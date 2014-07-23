@@ -58,6 +58,11 @@ public class AhimsaWallet {
         db.unreserveTxOuts(config.getMinCoinNecessary());
     }
 
+    public void removeAllReservations()
+    {
+        db.removeAllReservations();
+    }
+
     public Transaction createAndAddBulletin(String topic, String message, Long fee) throws Exception
     {
         List<TransactionOutput> unspents = db.getUnspentOutputs(config.getMinCoinNecessary());
@@ -83,12 +88,21 @@ public class AhimsaWallet {
             }
 
             // Flag funding outs as spent.
+            boolean unreserve_required = false;
             for(TransactionInput in : tx.getInputs()){
                 String previous_txid = in.getOutpoint().getHash().toString();
                 Long previous_vout = in.getOutpoint().getIndex();
 
-                db.setStatusSpent(previous_txid, previous_vout);
+                if( db.setStatusSpent(previous_txid, previous_vout) ){
+                    unreserve_required = true;
+                }
             }
+
+            // Spent an unreserved txout, must remove a reserved txout.
+            if (unreserve_required) {
+                db.unreserveTxOuts(config.getMinCoinNecessary());
+            }
+
         }
     }
 
@@ -131,9 +145,9 @@ public class AhimsaWallet {
         verifyKeyStore();
     }
 
-    public BigInteger getConfirmedBalance(boolean include_pending)
+    public Long getConfirmedBalance(boolean only_unreserved)
     {
-        return db.getConfirmedBalance(include_pending);
+        return db.getConfirmedBalance(only_unreserved);
     }
 
     public Bundle getUpdateBundle() {
@@ -143,8 +157,8 @@ public class AhimsaWallet {
         update_bundle.putInt(Constants.EXTRA_INT_UNCONF, db.getUnconfirmedTxs().getCount());
         update_bundle.putInt(Constants.EXTRA_INT_DRAFT, db.getDraftTx().getCount());
 
-        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL_NO_PEND, db.getConfirmedBalance(false).longValue());
-        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL_YES_PEND, db.getConfirmedBalance(true).longValue());
+        update_bundle.putLong(Constants.EXTRA_LONG_UNRESERVED_CONF_BAL, db.getConfirmedBalance(true));
+        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL, db.getConfirmedBalance(false));
         update_bundle.putLong(Constants.EXTRA_LONG_UNCONF_BAL, db.getUnconfirmedBalance().longValue());
         update_bundle.putInt(Constants.EXTRA_INT_CONF_TXOUTS, db.getConfirmedAndUnspentTxOuts().getCount());
         update_bundle.putInt(Constants.EXTRA_INT_UNCONF_TXOUTS, db.getUnconfirmedAndUnspentTxOuts().getCount());

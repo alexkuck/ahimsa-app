@@ -54,7 +54,7 @@ public class BulletinBuilder {
     public static void addMessageOutputs(Configuration config, Transaction tx, String message) {
 
         if (message.length() > Constants.MAX_MESSAGE_LEN) {
-            throw new Error("MESSAGE LENGTH OVER 140-0000000000000");
+            throw new Error("MESSAGE LENGTH OVER 500-0000000000000");
         }
 
         String slice = "";

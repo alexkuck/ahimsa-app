@@ -1,6 +1,7 @@
 package io.ahimsa.ahimsa_app.ui;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,17 +18,20 @@ import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
+import io.ahimsa.ahimsa_app.core.AhimsaWallet;
 import io.ahimsa.ahimsa_app.core.Utils;
 
 public class CreateBulletinActivity extends Activity {
 
     AhimsaApplication application;
+    AhimsaWallet ahimwall;
     Configuration config;
     CreateBulletinFragment frag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         application = (AhimsaApplication) getApplication();
+        ahimwall = application.getAhimsaWallet();
         config = application.getConfig();
 
         super.onCreate(savedInstanceState);
@@ -90,17 +94,16 @@ public class CreateBulletinActivity extends Activity {
 
             Long estimate = Utils.getEstimatedCost(config.getFeeValue(), config.getDustValue(), topic.length(), message.length());
             Log.d("createdBulletinActivity", "estimated cost: " + estimate);
-//            Log.d("createdBulletinActivity", "confirmed bala: " + config.getTempConfBalance());
 
-            // TODO MAJOR | prevent back-to-back bulletin creation
-            // TODO MAJOR | use tempory array of txout values, remove txout-value when bulletin submitted
-            // TODO MAJOR | refresh this array of txout-vals after each ahimsa_service completion
-//            if(estimated_cost <= config.getTempConfBalance()){
-//                config.setTempConfBalance( config.getTempConfBalance() - estimated_cost);
+            if(config.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(true)) {
                 AhimsaService.startBroadcastBulletin(this, topic, message, config.getFeeValue());
-//            } else {
-//                Toast.makeText(this, R.string.toast_insufficient_funds, Toast.LENGTH_LONG).show();
-//            }
+            } else {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Womp! Not enough coin.");
+                builder.setMessage(String.format("You need at least %s Satoshis to create a single bulletin. \n\nApologies, in the future you will be able to spend all confirmed coin.", config.getMinCoinNecessary()));
+                final AlertDialog dialog = builder.create();
+                dialog.show();
+            }
 
             return true;
         }

@@ -118,8 +118,19 @@ public class AhimsaDB {
         db.update(db_table_transactions, param, where, whereArgs);
     }
 
-    public void setStatusSpent(String txid, Long vout) {
+    public boolean setStatusSpent(String txid, Long vout) {
+        // if status of txout is pending, set as spent and return true
+
         setStatus(txid, vout, this.spent);
+
+        String sql = "SELECT * FROM txouts WHERE txid == ? AND vout == CAST(? AS INTEGER) AND status == 'pending';";
+        String[] args = {txid, vout.toString()};
+        Cursor cursor = db.rawQuery(sql, args);
+
+        if( cursor.getCount() == 0 ) {
+            return false;
+        }
+        return true;
     }
 
     public void setStatusUnspent(String txid, Long vout) {
@@ -146,7 +157,7 @@ public class AhimsaDB {
     }
 
     private boolean hasTransaction(String txid_arg){
-        String sql = String.format("SELECT txid FROM %s WHERE txid = ?;", db_table_transactions);
+        String sql = String.format("SELECT txid FROM %s WHERE txid == ?;", db_table_transactions);
         String[] args = {txid_arg};
         Cursor cursor = db.rawQuery(sql, args);
 
@@ -155,18 +166,9 @@ public class AhimsaDB {
         }
         return true;
     }
-
-    public Transaction getTransaction(String txid){
-        //todo necessary?
-        //regardless, should implement..
-
-        return null;
-    }
     //----------------------------------------------------------------------------------------------
-    // todo add pending functionality. you can do it!
-
     public void reserveTxOuts(Long min_coin_necessary){
-        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid" +
+        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                 "WHERE transactions.confirmed == 1 AND txouts.status == 'unspent' ORDER BY txouts.value DESC;";
 
         Long min = min_coin_necessary;
@@ -184,7 +186,7 @@ public class AhimsaDB {
     }
 
     public void unreserveTxOuts(Long min_coin_necessary){
-        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid" +
+        String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                 "WHERE transactions.confirmed == 1 AND txouts.status == 'pending' ORDER BY txouts.value ASC";
 
         Long min = min_coin_necessary;
@@ -199,6 +201,10 @@ public class AhimsaDB {
             bal += cursor.getLong(2);
             setStatusUnspent(cursor.getString(0), cursor.getLong(1));
         }
+    }
+
+    public void removeAllReservations(){
+        String sql = "UPDATE txouts SET status = 'unspent' WHERE status == 'pending';";
     }
 
     public List<TransactionOutput> getUnspentOutputs(Long min_coin_necessary){
@@ -238,22 +244,22 @@ public class AhimsaDB {
         return result;
     }
 
-    public BigInteger getConfirmedBalance(boolean include_pending){
+    public Long getConfirmedBalance(boolean only_unreserved){
         String SUM;
-        if(include_pending){
-            SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                    "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 1;");
-        } else {
+        if(only_unreserved){
             SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                     "WHERE (txouts.status == 'unspent') AND transactions.confirmed == 1;");
+        } else {
+            SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
+                    "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 1;");
         }
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
-            return BigInteger.valueOf((long) cursor.getInt(0));
+            return new Long(cursor.getInt(0));
         }
 
-        return BigInteger.ZERO;
+        return new Long(0);
     }
 
     public BigInteger getUnconfirmedBalance(){

@@ -88,12 +88,18 @@ public class AhimsaService extends IntentService {
         super("AhimsaService");
     }
 
+    //----------------------------------------------------------------------------------------------
+    public void onCreate() {
+        // todo | start bitcoin node with chain within onCreate(), maybe.
+        application = (AhimsaApplication) getApplication();
+        ahimwall = application.getAhimsaWallet();
+        super.onCreate();
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        instantiate();
-
         if (ACTION_BROADCAST_BULLETIN.equals( intent.getAction() )) {
-            // todo | think this through decide on best implementation.
+            // todo | think this through; decide on best implementation.
 //            final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
 //            final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
 //            final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
@@ -106,6 +112,14 @@ public class AhimsaService extends IntentService {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    @Override
+    public void onDestroy() {
+        // todo | stop bitcoin node within onDestroy(), maybe.
+        ahimwall.removeAllReservations();
+        super.onDestroy();
+    }
+
+    //----------------------------------------------------------------------------------------------
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
@@ -142,15 +156,6 @@ public class AhimsaService extends IntentService {
         }
     }
     //----------------------------------------------------------------------------------------------
-    private void instantiate()
-    {
-        if(application == null)
-        {
-            application = (AhimsaApplication) getApplication();
-            ahimwall = application.getAhimsaWallet();
-        }
-    }
-
     private void broadcastUpdateIntent()
     {
         Intent update_intent = new Intent();
@@ -181,7 +186,7 @@ public class AhimsaService extends IntentService {
 
         Log.d(TAG, "before sleeper 5000");
         try {
-            Thread.sleep(5000);
+            Thread.sleep(15000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -210,7 +215,7 @@ public class AhimsaService extends IntentService {
             ahimwall.commitTransaction(bulletin, highest_block, false);
 //            application.makeLongToast("Woot woot! Successfully broadcast bulletin: " + bulletin.getHashAsString());
         } catch (Exception e) {
-            //todo unreserve txouts
+            ahimwall.unreserveTxOuts();
 //            application.makeLongToast("Fail: could not broadcast bulletin.");
             e.printStackTrace();
         } finally {
@@ -233,7 +238,7 @@ public class AhimsaService extends IntentService {
 
         } catch (Exception e) {
 //            application.makeLongToast("Fail: could not broadcast bulletin.");
-            //todo unreserve txouts
+            ahimwall.unreserveTxOuts();
             e.printStackTrace();
         } finally {
             node.stopPeerGroup();

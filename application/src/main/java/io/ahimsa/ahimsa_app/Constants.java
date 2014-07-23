@@ -16,8 +16,8 @@ public class Constants {
     public static final String EXTRA_INT_CONF = "int_confirmed";
     public static final String EXTRA_INT_UNCONF = "int_unconfirmed";
     public static final String EXTRA_INT_DRAFT = "int_draft";
-    public static final String EXTRA_LONG_CONF_BAL_NO_PEND = "long_confirmed_balance_no_pending";
-    public static final String EXTRA_LONG_CONF_BAL_YES_PEND = "long_confirmed_balance_yes_pending";
+    public static final String EXTRA_LONG_UNRESERVED_CONF_BAL = "long_unreserved_confirmed_balance";
+    public static final String EXTRA_LONG_CONF_BAL = "long_confirmed_balance";
     public static final String EXTRA_LONG_UNCONF_BAL = "long_unconfirmed_balance";
     public static final String EXTRA_INT_CONF_TXOUTS = "int_confirmed_txouts";
     public static final String EXTRA_INT_UNCONF_TXOUTS = "int_unconfirmed_txouts";
