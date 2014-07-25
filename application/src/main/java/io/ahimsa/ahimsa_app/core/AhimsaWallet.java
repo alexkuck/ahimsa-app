@@ -1,5 +1,6 @@
 package io.ahimsa.ahimsa_app.core;
 
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -166,6 +167,11 @@ public class AhimsaWallet {
         return update_bundle;
     }
 
+    public Cursor getBulletinCursor(){
+        return db.getBulletinCursor();
+    }
+
+
 
     // private utilities----------------------------------------------------------------------------
     private void saveKeyStore()
@@ -256,6 +262,10 @@ public class AhimsaWallet {
     @Override
     public String toString()
     {
+        Log.d(TAG, "========================");
+        db.getBulletinCursor();
+        Log.d(TAG, "========================");
+
         String  a  =  "\n--------------------AhimsaWallet--------------------\n";
         a +=  keyStore.toString() + "\n";
         a +=  "----------------------Database----------------------\n";

@@ -183,14 +183,7 @@ public class AhimsaService extends IntentService {
     private void handleResetAhimsaWallet() {
         // Reset then re-initialization config, database, and keyStore.
 //        ahimwall.reset();
-
-        Log.d(TAG, "before sleeper 5000");
-        try {
-            Thread.sleep(15000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Log.d(TAG, "after sleeper 5000");
+        ahimwall.toLog();
     }
 
 

@@ -5,12 +5,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -35,6 +37,8 @@ public class AhimsaDB {
     public static final String highest_block = "highest_block";
     public static final String topic = "topic";
     public static final String message = "message";
+
+    //todo remove fee
     public static final String fee = "fee";
     public static final String vout = "vout";
     public static final String value = "value";
@@ -42,6 +46,9 @@ public class AhimsaDB {
     public static final String unspent = "unspent";
     public static final String spent = "spent";
     public static final String pending = "pending";
+
+    public static final String txout_total = "txout_total";
+    public static final String txout_count = "txout_count";
 
     AhimsaApplication application;
     SQLiteDatabase db;
@@ -275,24 +282,6 @@ public class AhimsaDB {
     }
 
     //----------------------------------------------------------------------------------------------
-    public Cursor getTransaction(){
-        String ALL_TXS = String.format("SELECT rowid _id,* FROM %s;", db_table_transactions);
-        Cursor cursor = db.rawQuery(ALL_TXS, null);
-        return cursor;
-    }
-
-    public Cursor getBulletins(){
-        String ALL_BULLETINS = String.format("SELECT rowid _id,* FROM %s", db_table_bulletins);
-        Cursor cursor = db.rawQuery(ALL_BULLETINS, null);
-        return cursor;
-    }
-
-    public Cursor getTransactionOutputs(){
-        String ALL_TX_OUTPUTS = String.format("SELECT rowid _id,* FROM %s", db_table_txouts);
-        Cursor cursor = db.rawQuery(ALL_TX_OUTPUTS, null);
-        return cursor;
-    }
-
     public Cursor getConfirmedTxs() {
         String ALL_CONFIRMED_TXS = String.format("SELECT * FROM %s WHERE confirmed == 1;", db_table_transactions);
 
@@ -327,6 +316,25 @@ public class AhimsaDB {
         return cursor;
     }
 
+    //----------------------------------------------------------------------------------------------
+    public Cursor getBulletinCursor() {
+        //[_id, txid, sent_time, confirmed, highest_block, topic, message, txout_total, txout_count]
+        String sql = "SELECT transactions.rowid _id, " +
+                            "transactions.txid, transactions.sent_time, transactions.confirmed, transactions.highest_block, " +
+                            "IFNULL(bulletins.topic, 'Funding Transaction') AS topic, " +
+                            "IFNULL(bulletins.message, 'This transaction funded your local address.') AS message, " +
+                            "IFNULL(sum.txout_total, 0) AS txout_total, " +
+                            "IFNULL(count.txout_count, 0) AS txout_count " +
+                       "FROM transactions " +
+                  "LEFT JOIN bulletins ON transactions.txid == bulletins.txid " +
+                  "LEFT JOIN (SELECT txid, sum(value) AS txout_total FROM txouts GROUP BY txid) sum ON (transactions.txid = sum.txid) " +
+                  "LEFT JOIN (SELECT txid, count(txid) AS txout_count FROM txouts GROUP BY txid) count ON (transactions.txid = count.txid) " +
+                   "ORDER BY transactions.sent_time DESC;";
+
+
+        Cursor cursor = db.rawQuery(sql, null);
+        return cursor;
+    }
 
     //----------------------------------------------------------------------------------------------
     public void reset(){

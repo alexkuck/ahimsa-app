@@ -40,7 +40,7 @@ public class AhimsaActivity extends Activity {
         config = application.getConfig();
 
         pager = (ViewPager) findViewById(R.id.viewPager);
-        pager.setAdapter(new MyPagerAdapter(getFragmentManager()));
+        pager.setAdapter(new MyPagerAdapter(this, getFragmentManager()));
 
         IntentFilter filter = new IntentFilter(Constants.ACTION_AHIMWALL_UPDATE);
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter);
@@ -69,11 +69,13 @@ public class AhimsaActivity extends Activity {
 
 
     private class MyPagerAdapter extends FragmentPagerAdapter {
+        Activity activity;
         private final SparseArray<Fragment> mPageReferences;
 
-        public MyPagerAdapter(FragmentManager fm) {
+        public MyPagerAdapter(Activity activity, FragmentManager fm) {
             super(fm);
             mPageReferences = new SparseArray<Fragment>();
+            this.activity = activity;
         }
 
         @Override
@@ -87,7 +89,7 @@ public class AhimsaActivity extends Activity {
 //                            mPageReferences.put(index, frag1);
 //                            return frag1;
 
-                default:    OverviewFragment frag2 = OverviewFragment.newInstance(application.getUpdateBundle());
+                default:    BulletinListFragment frag2 = BulletinListFragment.newInstance(activity, application.getBulletinCursor());
                             mPageReferences.put(index, frag2);
                             return frag2;
             }
@@ -123,7 +125,7 @@ public class AhimsaActivity extends Activity {
         if (id == R.id.action_settings) {
 //            FundService.startActionRequestFundingTx(this, config.getFundingIP(), config.getDefaultAddress());
             AhimsaService.startResetAhimsaWallet(this);
-            application.getAhimsaWallet().toLog();
+
             return true;
         } else if (id == R.id.action_create_bulletin) {
             Intent intent = new Intent(this, CreateBulletinActivity.class);

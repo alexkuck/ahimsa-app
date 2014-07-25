@@ -38,10 +38,11 @@ public class Constants {
     public static final Long MIN_DUST = new Long(546);
     public static final Long MIN_FEE = new Long(10000);
 
-    // todo | change this to bytes
     public static final int MAX_MESSAGE_LEN = 500;
     public static final int MAX_TOPIC_LEN = 15;
     public static final int CHAR_PER_OUT = 20;
+
+    public static final String DEFAULT_TOPIC = "Let it be known";
 
     private static final String FILENAME_NETWORK_SUFFIX = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? "" : "-testnet";
     public static final String WALLET_FILENAME_PROTOBUF = "wallet-protobuf" + FILENAME_NETWORK_SUFFIX;

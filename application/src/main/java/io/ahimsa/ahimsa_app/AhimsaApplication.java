@@ -2,6 +2,7 @@ package io.ahimsa.ahimsa_app;
 
 import android.app.Application;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -86,6 +87,10 @@ public class AhimsaApplication extends Application {
         update_bundle.putLong(Constants.EXTRA_LONG_LOCAL_HEIGHT, chain.getBestChainHeight());
 
         return update_bundle;
+    }
+
+    public Cursor getBulletinCursor() {
+        return ahimwall.getBulletinCursor();
     }
 
     // Load Block Chain-----------------------------------------------------------------------------

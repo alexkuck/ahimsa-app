@@ -100,7 +100,7 @@ public class CreateBulletinActivity extends Activity {
             } else {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Womp! Not enough coin.");
-                builder.setMessage(String.format("You need at least %s Satoshis to create a single bulletin. \n\nApologies, in the future you will be able to spend all confirmed coin.", config.getMinCoinNecessary()));
+                builder.setMessage(String.format("%s confirmed Satoshis are required to create a bulletin. \n\nOur apologies, a future version will not have this limitation...", config.getMinCoinNecessary()));
                 final AlertDialog dialog = builder.create();
                 dialog.show();
             }
