@@ -37,6 +37,7 @@ public class AhimsaService extends IntentService {
     private static final String EXTRA_BYTE_ARRAY_TX         = AhimsaService.class.getPackage().getName() + ".tx";
     private static final String EXTRA_BOOLEAN_ASSUME_CONF   = AhimsaService.class.getPackage().getName() + ".assume_confirmed";
     private static final String EXTRA_LONG_HEIGHT           = AhimsaService.class.getPackage().getName() + ".height";
+    private static final String EXTRA_STRING_TXID           = AhimsaService.class.getPackage().getName() + ".txid";
 
     private AhimsaApplication application;
     private AhimsaWallet ahimwall;
@@ -79,8 +80,15 @@ public class AhimsaService extends IntentService {
 
     public static void startImportBlock(Context context, Long height) {
         Intent intent = new Intent(context, AhimsaService.class);
-        intent.putExtra(EXTRA_LONG_HEIGHT, height);
         intent.setAction(ACTION_IMPORT_BLOCK);
+        intent.putExtra(EXTRA_LONG_HEIGHT, height);
+        context.startService(intent);
+    }
+
+    public static void startConfirmTx(Context context, String txid) {
+        Intent intent = new Intent(context, AhimsaService.class);
+        intent.setAction(ACTION_CONFIRM_TX);
+        intent.putExtra(EXTRA_STRING_TXID, txid);
         context.startService(intent);
     }
 
@@ -149,6 +157,10 @@ public class AhimsaService extends IntentService {
             else if (ACTION_IMPORT_BLOCK.equals(action)) {
                 final long height = intent.getLongExtra(EXTRA_LONG_HEIGHT, -1);
                 handleImportBlock(height);
+            }
+            else if (ACTION_CONFIRM_TX.equals(action)) {
+                final String txid = intent.getStringExtra(EXTRA_STRING_TXID);
+                handleConfirmTx(txid);
             }
 
             broadcastUpdateIntent();
@@ -303,6 +315,22 @@ public class AhimsaService extends IntentService {
                 ahimwall.commitTransaction(tx, import_height, true);
             }
         }
+
+    }
+
+    public void handleConfirmTx(String txid) {
+
+        // verify txid is in ahimwall
+        // verify txid is not confirmed
+
+        // derive limiting_block from broadcast time
+        // highest_block_checked
+
+        // if highest block < local chain height
+        //      have all hashes, download blockchain unnecessary
+        // else
+        //      download blockchain
+
 
     }
 

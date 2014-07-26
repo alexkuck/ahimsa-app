@@ -42,6 +42,7 @@ public class Constants {
     public static final int MAX_TOPIC_LEN = 15;
     public static final int CHAR_PER_OUT = 20;
 
+    public static final byte[] AHIMSA_BULLETIN_PREFIX = "BRETHREN".getBytes();
     public static final String DEFAULT_TOPIC = "Let it be known";
 
     private static final String FILENAME_NETWORK_SUFFIX = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? "" : "-testnet";

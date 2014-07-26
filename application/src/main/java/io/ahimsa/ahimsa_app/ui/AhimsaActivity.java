@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,22 +17,66 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v13.app.FragmentPagerAdapter;
 
+import com.astuetz.PagerSlidingTabStrip;
+
 import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
-import io.ahimsa.ahimsa_app.fund.FundService;
 
 public class AhimsaActivity extends Activity {
 
     AhimsaApplication application;
     Configuration config;
     ViewPager pager;
+    PagerSlidingTabStrip tabs;
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        Log.d("AA", "ONSAVEDINSTANCESTATE");
+    }
+
+    @Override
+    public void onRestart() {
+        Log.d("AA", "ON RESTART");
+        super.onRestart();
+    }
+
+    @Override
+    public void onStart() {
+        Log.d("AA", "ONSTART");
+        super.onStart();
+    }
+
+    @Override
+    public void onResume(){
+        Log.d("AA", "ONRESUME");
+        super.onResume();
+    }
+
+    @Override
+    public void onPause(){
+        Log.d("AA", "ONPAUSE");
+        super.onPause();
+    }
+
+    @Override
+    public void onStop(){
+        Log.d("AA", "ONSTOP");
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroy(){
+        Log.d("AA", "ONDESTROY");
+        super.onDestroy();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        Log.d("AA", "ONCREATE");
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -41,6 +86,14 @@ public class AhimsaActivity extends Activity {
 
         pager = (ViewPager) findViewById(R.id.viewPager);
         pager.setAdapter(new MyPagerAdapter(this, getFragmentManager()));
+
+        tabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
+        tabs.setViewPager(pager);
+
+        if(savedInstanceState != null){
+            Log.d("BAM", "BAM");
+            tabs.onRestoreInstanceState(savedInstanceState.getParcelable("tabs"));
+        }
 
         IntentFilter filter = new IntentFilter(Constants.ACTION_AHIMWALL_UPDATE);
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter);
@@ -69,6 +122,15 @@ public class AhimsaActivity extends Activity {
 
 
     private class MyPagerAdapter extends FragmentPagerAdapter {
+
+        private final String[] TITLES = { "Wallet", "Bulletins"};
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return TITLES[position];
+        }
+
+
         Activity activity;
         private final SparseArray<Fragment> mPageReferences;
 
@@ -102,6 +164,17 @@ public class AhimsaActivity extends Activity {
 
         public Fragment getFragment(int key) {
             return mPageReferences.get(key);
+        }
+
+        public void callUpdate() {
+
+            OverviewFragment overview_frag = (OverviewFragment) getFragment( 0 );
+            BulletinListFragment list_frag = (BulletinListFragment) getFragment( 1 );
+
+            overview_frag.updateView( application.getUpdateBundle() );
+            list_frag.update( application.getBulletinCursor() );
+
+
         }
 
 

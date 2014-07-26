@@ -11,7 +11,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
@@ -27,6 +26,49 @@ public class CreateBulletinActivity extends Activity {
     AhimsaWallet ahimwall;
     Configuration config;
     CreateBulletinFragment frag;
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        Log.d("CB", "ONSAVEDINSTANCESTATE");
+    }
+
+    @Override
+    public void onRestart() {
+        Log.d("CB", "ON RESTART");
+        super.onRestart();
+    }
+
+    @Override
+    public void onStart() {
+        Log.d("CB", "ONSTART");
+        super.onStart();
+    }
+
+    @Override
+    public void onResume(){
+        Log.d("CB", "ONRESUME");
+        super.onResume();
+    }
+
+    @Override
+    public void onPause(){
+        Log.d("CB", "ONPAUSE");
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+        super.onPause();
+    }
+
+    @Override
+    public void onStop(){
+        Log.d("CB", "ONSTOP");
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroy(){
+        Log.d("CB", "ONDESTROY");
+        super.onDestroy();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +107,12 @@ public class CreateBulletinActivity extends Activity {
             frag.updateView(application.getUpdateBundle());
         }
     }
-
-    @Override
-    public void finish() {
-        super.finish();
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-    }
+//
+//    @Override
+//    public void finish() {
+//        super.finish();
+//        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

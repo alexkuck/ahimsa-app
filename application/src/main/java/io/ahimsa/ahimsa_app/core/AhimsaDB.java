@@ -261,6 +261,7 @@ public class AhimsaDB {
                     "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 1;");
         }
 
+
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
             return new Long(cursor.getInt(0));
@@ -321,12 +322,12 @@ public class AhimsaDB {
         //[_id, txid, sent_time, confirmed, highest_block, topic, message, txout_total, txout_count]
         String sql = "SELECT transactions.rowid _id, " +
                             "transactions.txid, transactions.sent_time, transactions.confirmed, transactions.highest_block, " +
-                            "IFNULL(bulletins.topic, 'Funding Transaction') AS topic, " +
-                            "IFNULL(bulletins.message, 'This transaction funded your local address.') AS message, " +
+                            "IFNULL(bulletins.topic, 'topic was null') AS topic, " +
+                            "IFNULL(bulletins.message, 'message was null') AS message, " +
                             "IFNULL(sum.txout_total, 0) AS txout_total, " +
                             "IFNULL(count.txout_count, 0) AS txout_count " +
                        "FROM transactions " +
-                  "LEFT JOIN bulletins ON transactions.txid == bulletins.txid " +
+                      " JOIN bulletins ON transactions.txid == bulletins.txid " +
                   "LEFT JOIN (SELECT txid, sum(value) AS txout_total FROM txouts GROUP BY txid) sum ON (transactions.txid = sum.txid) " +
                   "LEFT JOIN (SELECT txid, count(txid) AS txout_count FROM txouts GROUP BY txid) count ON (transactions.txid = count.txid) " +
                    "ORDER BY transactions.sent_time DESC;";

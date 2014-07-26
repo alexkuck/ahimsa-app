@@ -16,7 +16,7 @@ public class Utils {
 
     //TODO MAJOR | make this robust
     public static long getEstimatedCost(Long fee, Long dust, int top_count, int msg_count) {
-        return fee + dust * (((top_count + msg_count - 2)+ Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
+        return fee + dust * ( (top_count + msg_count+ Constants.CHAR_PER_OUT - 1) / Constants.CHAR_PER_OUT);
     }
 
     public static byte[] hexToBytes(String s)

@@ -41,7 +41,6 @@ public class AhimsaWallet {
         this.keyStoreFile = keyStoreFile;
         this.db = db;
         this.config = config;
-
         loadWalletFromProtobuf();
     }
 
@@ -66,9 +65,26 @@ public class AhimsaWallet {
 
     public Transaction createAndAddBulletin(String topic, String message, Long fee) throws Exception
     {
+        // Ensure topic and message content is proper
+        if(topic == null || topic.equals("") ){
+            topic = Constants.DEFAULT_TOPIC;
+        }
+
+        if(message == null){
+            message = "";
+        }
+
+        // Get the right amount of unspent transaction outputs to spend from
         List<TransactionOutput> unspents = db.getUnspentOutputs(config.getMinCoinNecessary());
+
+        // Create a bulletin using system's configuration file, a bitcoinj wallet, the unspent
+        // txouts gathered, and the topic and message.
         Transaction bulletin = BulletinBuilder.createTx(config, keyStore, unspents, topic, message);
+
+        // Add this bulletin to the bulletin table
+        // todo | atomicity (include with commit of transaction)
         db.addBulletin(bulletin.getHashAsString(), topic, message, fee);
+
         return bulletin;
     }
 

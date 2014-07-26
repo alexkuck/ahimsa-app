@@ -97,7 +97,7 @@ public class Configuration {
 
     // BulletinBuilder -----------------------------------------------------------------------------
     public Long     getMinCoinNecessary(){
-        return getFeeValue() + getDustValue()*((Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT + 1) / Constants.CHAR_PER_OUT);
+        return getFeeValue() + getDustValue()*((Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT - 1) / Constants.CHAR_PER_OUT);
     }
 
     public Long     getDustValue() {
