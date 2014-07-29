@@ -16,6 +16,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         tools:context="io.ahimsa.ahimsa_app.ui.AhimsaActivity" />
+
     <!--android:layout_below="@id/tabs"-->
 
 

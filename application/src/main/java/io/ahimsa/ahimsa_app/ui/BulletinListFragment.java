@@ -41,12 +41,9 @@ public class BulletinListFragment extends ListFragment {
     {
         BulletinCursorAdapter adapter = (BulletinCursorAdapter) getListAdapter();
         adapter.swapCursor(cursor);
-        adapter.notifyDataSetChanged();
-
-//        setListAdapter(new BulletinCursorAdapter(getActivity(), R.layout.listview_item_bulletin, cursor, -1));
     }
 
-
+    // ---------------------------------------------------------------------------------------------
     public static BulletinListFragment newInstance(Activity activity, Cursor cursor)
     {
         BulletinListFragment frag = new BulletinListFragment();

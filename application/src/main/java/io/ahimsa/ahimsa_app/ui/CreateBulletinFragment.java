@@ -118,7 +118,7 @@ public class CreateBulletinFragment extends Fragment {
                 address_value.setText(address.substring(1,9));
             }
 
-            Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_UNRESERVED_CONF_BAL);
+            Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL);
             final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_balance_value);
             confirmed_value.setText(confirmed_balance.toString());
 

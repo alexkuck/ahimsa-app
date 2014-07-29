@@ -23,7 +23,7 @@ import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Constants;
 
 public class AhimsaService extends IntentService {
-    private static final String ACTION_VERIFY_AHIMSA_WALLET = AhimsaService.class.getPackage().getName() + ".verify_ahisma_wallet";
+    private static final String ACTION_NETWORK_TEST = AhimsaService.class.getPackage().getName() + ".network_test";
     private static final String ACTION_RESET_AHIMSA_WALLET  = AhimsaService.class.getPackage().getName() + ".reset";
     private static final String ACTION_BROADCAST_BULLETIN   = AhimsaService.class.getPackage().getName() + ".broadcast_bulletin";
     private static final String ACTION_BROADCAST_TX         = AhimsaService.class.getPackage().getName() + ".broadcast_tx";
@@ -43,9 +43,9 @@ public class AhimsaService extends IntentService {
     private AhimsaWallet ahimwall;
     private String TAG = "AhismaService";
 
-    public static void startVerifyAhimsaWallet(Context context) {
+    public static void startNetworkTest(Context context) {
         Intent intent = new Intent(context, AhimsaService.class);
-        intent.setAction(ACTION_VERIFY_AHIMSA_WALLET);
+        intent.setAction(ACTION_NETWORK_TEST);
         context.startService(intent);
     }
 
@@ -134,8 +134,8 @@ public class AhimsaService extends IntentService {
             Log.d(TAG, "Commencing AhimsaService, action | " + intent.getAction());
             final String action = intent.getAction();
 
-            if (ACTION_VERIFY_AHIMSA_WALLET.equals(action)) {
-                handleVerifyAhimsaWallet();
+            if (ACTION_NETWORK_TEST.equals(action)) {
+                handleNetworkTest();
             }
             else if (ACTION_RESET_AHIMSA_WALLET.equals(action)) {
                 handleResetAhimsaWallet();
@@ -175,9 +175,7 @@ public class AhimsaService extends IntentService {
         LocalBroadcastManager.getInstance(this).sendBroadcast(update_intent);
     }
     //----------------------------------------------------------------------------------------------
-    private void handleVerifyAhimsaWallet() {
-        ahimwall.verifyKeyStore();
-
+    private void handleNetworkTest() {
         BitcoinNode node = new BitcoinNode(this, application);
         try {
             node.startPeerGroup(null);
@@ -217,7 +215,7 @@ public class AhimsaService extends IntentService {
         try {
             node.startPeerGroup(null);
             Long highest_block = node.broadcastTx(bulletin);
-            ahimwall.commitTransaction(bulletin, highest_block, false);
+            ahimwall.commitTransaction(bulletin, highest_block, true);
 //            application.makeLongToast("Woot woot! Successfully broadcast bulletin: " + bulletin.getHashAsString());
         } catch (Exception e) {
             ahimwall.unreserveTxOuts();

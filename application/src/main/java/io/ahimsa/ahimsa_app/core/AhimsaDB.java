@@ -80,7 +80,7 @@ public class AhimsaDB {
         ContentValues params = new ContentValues();
         params.put(this.txid, tx.getHashAsString());
         params.put(this.raw, tx.bitcoinSerialize());
-        params.put(this.sent_time, System.currentTimeMillis()/1000);
+        params.put(this.sent_time, System.currentTimeMillis());
         params.put(this.confirmed, tx_confirmed);
 
         if(tx_highest_block == null) {
@@ -251,14 +251,14 @@ public class AhimsaDB {
         return result;
     }
 
-    public Long getConfirmedBalance(boolean only_unreserved){
+    public Long getConfirmedBalance(boolean only_pending){
         String SUM;
-        if(only_unreserved){
+        if(only_pending){
             SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                    "WHERE (txouts.status == 'unspent') AND transactions.confirmed == 1;");
+                    "WHERE (txouts.status == 'pending') AND transactions.confirmed == 1;");
         } else {
             SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
-                    "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 1;");
+                    "WHERE (txouts.status == 'unspent') AND transactions.confirmed == 1;");
         }
 
 
@@ -303,10 +303,17 @@ public class AhimsaDB {
         return cursor;
     }
 
-    public Cursor getConfirmedAndUnspentTxOuts() {
-        String ALL_CONF_AND_UNSP_TXOUTS = String.format("SELECT * FROM txouts JOIN transactions " +
-                "ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent' AND transactions.confirmed == 1");
-        Cursor cursor = db.rawQuery(ALL_CONF_AND_UNSP_TXOUTS, null);
+    public Cursor getConfirmedAndUnspentTxOuts(boolean only_pending) {
+        String sql;
+        if(only_pending){
+            sql = String.format("SELECT * FROM txouts JOIN transactions " +
+                    "ON transactions.txid == txouts.txid WHERE txouts.status == 'pending' AND transactions.confirmed == 1");
+        }else{
+            sql = String.format("SELECT * FROM txouts JOIN transactions " +
+                    "ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent' AND transactions.confirmed == 1");
+        }
+
+        Cursor cursor = db.rawQuery(sql, null);
         return cursor;
     }
 

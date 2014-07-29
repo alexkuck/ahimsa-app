@@ -42,6 +42,8 @@ public class AhimsaWallet {
         this.db = db;
         this.config = config;
         loadWalletFromProtobuf();
+
+        verifyKeyStore();
     }
 
     // public utilities-----------------------------------------------------------------------------
@@ -170,15 +172,16 @@ public class AhimsaWallet {
     public Bundle getUpdateBundle() {
         Bundle update_bundle = new Bundle();
 
-        update_bundle.putInt(Constants.EXTRA_INT_CONF, db.getConfirmedTxs().getCount());
+//        update_bundle.putInt(Constants.EXTRA_INT_CONF, db.getConfirmedTxs().getCount());
         update_bundle.putInt(Constants.EXTRA_INT_UNCONF, db.getUnconfirmedTxs().getCount());
-        update_bundle.putInt(Constants.EXTRA_INT_DRAFT, db.getDraftTx().getCount());
+//        update_bundle.putInt(Constants.EXTRA_INT_DRAFT, db.getDraftTx().getCount());
+        update_bundle.putLong(Constants.EXTRA_LONG_AVAILABLE_BAL, db.getConfirmedBalance(false));
+        update_bundle.putInt(Constants.EXTRA_INT_AVAILABLE_TXOUTS, db.getConfirmedAndUnspentTxOuts(false).getCount());
 
-        update_bundle.putLong(Constants.EXTRA_LONG_UNRESERVED_CONF_BAL, db.getConfirmedBalance(true));
-        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL, db.getConfirmedBalance(false));
-        update_bundle.putLong(Constants.EXTRA_LONG_UNCONF_BAL, db.getUnconfirmedBalance().longValue());
-        update_bundle.putInt(Constants.EXTRA_INT_CONF_TXOUTS, db.getConfirmedAndUnspentTxOuts().getCount());
-        update_bundle.putInt(Constants.EXTRA_INT_UNCONF_TXOUTS, db.getUnconfirmedAndUnspentTxOuts().getCount());
+//        update_bundle.putLong(Constants.EXTRA_LONG_CONF_BAL, db.getConfirmedBalance(false));
+//        update_bundle.putLong(Constants.EXTRA_LONG_UNCONF_BAL, db.getUnconfirmedBalance().longValue());
+//        update_bundle.putInt(Constants.EXTRA_INT_CONF_TXOUTS, db.getConfirmedAndUnspentTxOuts(false).getCount());
+//        update_bundle.putInt(Constants.EXTRA_INT_UNCONF_TXOUTS, db.getUnconfirmedAndUnspentTxOuts().getCount());
 
         return update_bundle;
     }

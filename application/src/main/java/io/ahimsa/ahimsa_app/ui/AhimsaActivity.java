@@ -24,6 +24,7 @@ import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
+import io.ahimsa.ahimsa_app.fund.FundService;
 
 public class AhimsaActivity extends Activity {
 
@@ -90,15 +91,14 @@ public class AhimsaActivity extends Activity {
         tabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
         tabs.setViewPager(pager);
 
-        if(savedInstanceState != null){
-            Log.d("BAM", "BAM");
-            tabs.onRestoreInstanceState(savedInstanceState.getParcelable("tabs"));
-        }
-
         IntentFilter filter = new IntentFilter(Constants.ACTION_AHIMWALL_UPDATE);
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter);
+
+
     }
 
+    // UpdateReceiver ------------------------------------------------------------------------------
+    // todo split
     private BroadcastReceiver updateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -111,16 +111,10 @@ public class AhimsaActivity extends Activity {
 
     private void handleAhimsaWalletUpdate() {
         MyPagerAdapter adapter = (MyPagerAdapter) pager.getAdapter();
-        OverviewFragment frag = (OverviewFragment) adapter.getFragment( 0 );
-        if(frag != null){
-            frag.updateView(application.getUpdateBundle());
-        }
-
-//        OverviewFragment frag2 = (OverviewFragment) adapter.getFragment( 1 );
-//        frag2.updateView(application.getUpdateBundle());
+        adapter.updateFragments();
     }
 
-
+    // Adapter -------------------------------------------------------------------------------------
     private class MyPagerAdapter extends FragmentPagerAdapter {
 
         private final String[] TITLES = { "Wallet", "Bulletins"};
@@ -166,21 +160,26 @@ public class AhimsaActivity extends Activity {
             return mPageReferences.get(key);
         }
 
-        public void callUpdate() {
+        public void updateFragments() {
 
             OverviewFragment overview_frag = (OverviewFragment) getFragment( 0 );
             BulletinListFragment list_frag = (BulletinListFragment) getFragment( 1 );
 
-            overview_frag.updateView( application.getUpdateBundle() );
-            list_frag.update( application.getBulletinCursor() );
+            if(overview_frag != null)
+            {
+                overview_frag.updateView( application.getUpdateBundle() );
+            }
 
+            if(list_frag != null)
+            {
+                list_frag.update( application.getBulletinCursor() );
+            }
 
         }
 
-
     }
 
-
+    // Menu ----------------------------------------------------------------------------------------
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -196,15 +195,12 @@ public class AhimsaActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-//            FundService.startActionRequestFundingTx(this, config.getFundingIP(), config.getDefaultAddress());
             AhimsaService.startResetAhimsaWallet(this);
-
             return true;
         } else if (id == R.id.action_create_bulletin) {
             Intent intent = new Intent(this, CreateBulletinActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-
             return true;
         }
         return super.onOptionsItemSelected(item);

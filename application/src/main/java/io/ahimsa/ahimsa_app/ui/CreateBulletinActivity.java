@@ -139,6 +139,7 @@ public class CreateBulletinActivity extends Activity {
 
             if(config.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(true)) {
                 AhimsaService.startBroadcastBulletin(this, topic, message, config.getFeeValue());
+                finish();
             } else {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Womp! Not enough coin.");

@@ -50,7 +50,7 @@ public class AhimsaApplication extends Application {
 
         //create ahimsa wallet, verify.
         ahimwall = new AhimsaWallet(keyStoreFile, db, config);
-        AhimsaService.startVerifyAhimsaWallet(this);
+//        AhimsaService.startNetworkTest(this);
 
         //load block chain, sync block chain.
         blockStoreFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.BLOCKSTORE_FILENAME);

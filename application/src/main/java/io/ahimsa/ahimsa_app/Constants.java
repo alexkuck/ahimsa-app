@@ -16,7 +16,9 @@ public class Constants {
     public static final String EXTRA_INT_CONF = "int_confirmed";
     public static final String EXTRA_INT_UNCONF = "int_unconfirmed";
     public static final String EXTRA_INT_DRAFT = "int_draft";
-    public static final String EXTRA_LONG_UNRESERVED_CONF_BAL = "long_unreserved_confirmed_balance";
+    public static final String EXTRA_LONG_AVAILABLE_BAL = "long_available_balance";
+    public static final String EXTRA_INT_AVAILABLE_TXOUTS = "int_available_txouts";
+
     public static final String EXTRA_LONG_CONF_BAL = "long_confirmed_balance";
     public static final String EXTRA_LONG_UNCONF_BAL = "long_unconfirmed_balance";
     public static final String EXTRA_INT_CONF_TXOUTS = "int_confirmed_txouts";
@@ -49,5 +51,8 @@ public class Constants {
     public static final String WALLET_FILENAME_PROTOBUF = "wallet-protobuf" + FILENAME_NETWORK_SUFFIX;
     public static final String BLOCKSTORE_FILENAME = "blockstore" + FILENAME_NETWORK_SUFFIX;
     public static final String CHECKPOINTS_FILENAME = "checkpoints" + FILENAME_NETWORK_SUFFIX;
+
+    public static final String COMMA_REGEX_1 = "(\\d)(?=(\\d{3})+$)";
+    public static final String COMMA_REGEX_2 = "$1,";
 
 }

@@ -2,6 +2,8 @@ package io.ahimsa.ahimsa_app.ui;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
@@ -10,6 +12,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +23,7 @@ import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.fund.FundService;
+import io.ahimsa.ahimsa_app.util.Qr;
 
 
 public class OverviewFragment extends Fragment {
@@ -31,7 +35,7 @@ public class OverviewFragment extends Fragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        View v = inflater.inflate(R.layout.fragment_overview, container, false);
+        View v = inflater.inflate(R.layout.fragment_overview2, container, false);
         updateView(v, getArguments());
 
         Button importBlockButton = (Button) v.findViewById(R.id.import_block_button);
@@ -90,7 +94,6 @@ public class OverviewFragment extends Fragment {
             }
         });
 
-
         return v;
     }
 
@@ -102,45 +105,56 @@ public class OverviewFragment extends Fragment {
         if(v != null){
             final TextView address_eight_value = (TextView) v.findViewById(R.id.address_value);
             final TextView checksum_value = (TextView) v.findViewById(R.id.checksum_value);
-
             String address = args.getString(Constants.EXTRA_STRING_ADDRESS);
             if(address.length() > 8) {
                 address_eight_value.setText(address.substring(1,9));
                 checksum_value.setText(address.substring(address.length()-4));
             }
 
-            final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_value);
-            confirmed_value.setText(new Integer(args.getInt(Constants.EXTRA_INT_CONF)).toString());
+            final TextView available_balance = (TextView) v.findViewById(R.id.available_satoshi_value);
+            String avail_bal = new Long(args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL)).toString();
+            avail_bal = avail_bal.replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2);
+            available_balance.setText(avail_bal);
 
-            final TextView unconfirmed_value = (TextView) v.findViewById(R.id.unconfirmed_value);
-            unconfirmed_value.setText(new Integer(args.getInt(Constants.EXTRA_INT_UNCONF)).toString());
+            final TextView txouts_value = (TextView) v.findViewById(R.id.available_txout_value);
+            Integer avail_txouts = args.getInt(Constants.EXTRA_INT_AVAILABLE_TXOUTS);
+            txouts_value.setText(avail_txouts.toString());
 
-            final TextView draft_value = (TextView) v.findViewById(R.id.draft_value);
-            draft_value.setText(new Integer(args.getInt(Constants.EXTRA_INT_DRAFT)).toString());
 
-            final TextView unreserved_balance = (TextView) v.findViewById(R.id.unreserved_balance_value);
-            unreserved_balance.setText(new Long(args.getLong(Constants.EXTRA_LONG_UNRESERVED_CONF_BAL)).toString());
 
-            final TextView confirmed_balance = (TextView) v.findViewById(R.id.confirmed_balance_value);
-            String conf = String.format("%s (%s)",
-                    new Long(args.getLong(Constants.EXTRA_LONG_CONF_BAL)),
-                    new Integer(args.getInt(Constants.EXTRA_INT_CONF_TXOUTS)));
-            confirmed_balance.setText(conf);
+            final TextView character_estimate = (TextView) v.findViewById(R.id.character_estimate_value);
 
-            final TextView unconfirmed_balance = (TextView) v.findViewById(R.id.unconfirmed_balance_value);
-            String unconf = String.format("%s (%s)",
-                    new Long(args.getLong(Constants.EXTRA_LONG_UNCONF_BAL)),
-                    new Integer(args.getInt(Constants.EXTRA_INT_UNCONF_TXOUTS)));
-            unconfirmed_balance.setText(unconf);
+            final TextView bulletin_estimate = (TextView) v.findViewById(R.id.bulletin_estimate_value);
 
-            final TextView network = (TextView) v.findViewById(R.id.network_id_value);
-            network.setText( Constants.NETWORK_PARAMETERS.getId() );
 
-            final TextView network_height = (TextView) v.findViewById(R.id.network_height_value);
-            network_height.setText(new Long(args.getLong(Constants.EXTRA_LONG_NET_HEIGHT)).toString());
+            final TextView confirmed_count = (TextView) v.findViewById(R.id.confirmed_count_value);
 
-            final TextView local_height = (TextView) v.findViewById(R.id.local_height_value);
-            local_height.setText(new Long(args.getLong(Constants.EXTRA_LONG_LOCAL_HEIGHT)).toString());
+            final TextView unconfirmed_count = (TextView) v.findViewById(R.id.unconfirmed_count_value);
+
+
+
+            final Bitmap qr_address = Qr.bitmap(args.getString(Constants.EXTRA_STRING_ADDRESS), 256);
+            ImageView qr_view = (ImageView) v.findViewById(R.id.qr_value);
+            qr_view.setImageBitmap(qr_address);
+
+            final TextView full_address_value = (TextView) v.findViewById(R.id.full_address_value);
+            full_address_value.setText(address);
+
+
+
+
+//            final TextView unconf_tx_value = (TextView) v.findViewById(R.id.unconfirmed_tx_value);
+//            Integer unconf_tx = new Integer(args.getInt(Constants.EXTRA_INT_UNCONF));
+//            unconf_tx_value.setText(unconf_tx.toString() + " Unconfirmed Transactions");
+//
+//            switch (unconf_tx){
+//                case 0: unconf_tx_value.setTextColor(Color.BLACK);
+//                        break;
+//                case 1: unconf_tx_value.setText(unconf_tx.toString() + " Unconfirmed Transaction");
+//            }
+
+
+
         }
     }
 

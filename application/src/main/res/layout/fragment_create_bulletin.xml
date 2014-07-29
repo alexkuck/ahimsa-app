@@ -11,6 +11,7 @@
     <TextView
         android:id="@+id/address_value"
         android:text="address"
+        android:textStyle="bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
@@ -39,6 +40,7 @@
         android:layout_toRightOf="@+id/address_seperator"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textStyle="bold"
+        android:textColor="#00b0b0"
         />
 
     <TextView
