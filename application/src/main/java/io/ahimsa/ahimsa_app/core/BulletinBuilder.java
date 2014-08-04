@@ -23,30 +23,36 @@ import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.core.WireBulletinProtos.WireBulletin;
 
 
-public class BulletinBuilder {
+public class BulletinBuilder
+{
 
-    private static void addInputs(Transaction tx, List<TransactionOutput> unspents){
-
-        for(TransactionOutput out : unspents){
+    private static void addInputs(Transaction tx, List<TransactionOutput> unspents)
+    {
+        for(TransactionOutput out : unspents)
+        {
             TransactionOutPoint outpoint = new TransactionOutPoint(Constants.NETWORK_PARAMETERS, indexOf(out), out.getParentTransaction());
             tx.addInput(new TransactionInput(Constants.NETWORK_PARAMETERS, tx, new byte[]{}, outpoint));
         }
     }
 
-    private static int indexOf(TransactionOutput out){
+    private static int indexOf(TransactionOutput out)
+    {
         Transaction parent = out.getParentTransaction();
-        for(int i = 0; i < parent.getOutputs().size(); i++){
-            if(Arrays.equals(out.bitcoinSerialize(), parent.getOutput(i).bitcoinSerialize())){
+        for(int i = 0; i < parent.getOutputs().size(); i++)
+        {
+            if(Arrays.equals(out.bitcoinSerialize(), parent.getOutput(i).bitcoinSerialize()))
+            {
                 return i;
             }
         }
         return -1;
     }
 
-    private static void addBulletinOutputs(Configuration config, Transaction tx, String topic, String message) {
-
+    private static void addBulletinOutputs(Transaction tx, String topic, String message)
+    {
         // Verify topic + message length is valid
-        if (topic.length() + message.length() > Constants.MAX_MESSAGE_LEN) {
+        if (topic.length() + message.length() > Constants.MAX_MESSAGE_LEN)
+        {
             throw new Error("MESSAGE LENGTH OVER 500-0000000000000");
         }
 
@@ -71,33 +77,37 @@ public class BulletinBuilder {
         Log.d("BB", Arrays.toString( complete_bytes ));
 
         // Copy ahimsa_bulletin_prefix into first eight bytes
-        for(int i = 0; i < Constants.AHIMSA_BULLETIN_PREFIX.length; i++){
+        for(int i = 0; i < Constants.AHIMSA_BULLETIN_PREFIX.length; i++)
+        {
             complete_bytes[i] = Constants.AHIMSA_BULLETIN_PREFIX[i];
         }
         Log.d("BB", Arrays.toString( complete_bytes ));
 
         // Copy buffer_bytes into array
-        for(int i = 0; i < buffer_bytes.length; i++){
+        for(int i = 0; i < buffer_bytes.length; i++)
+        {
             complete_bytes[i + Constants.AHIMSA_BULLETIN_PREFIX.length] = buffer_bytes[i];
         }
         Log.d("BB", Arrays.toString( complete_bytes ));
 
         // Encode 20 byte slices into output addresses, add output to transaction. Rinse and repeat.
         byte[] slice = new byte[Constants.CHAR_PER_OUT];
-        for(int i = 0; i < complete_bytes.length; i++){
+        for(int i = 0; i < complete_bytes.length; i++)
+        {
             slice[i % Constants.CHAR_PER_OUT] = complete_bytes[i];
-            if( (i+1) % Constants.CHAR_PER_OUT == 0 ){
+            if( (i+1) % Constants.CHAR_PER_OUT == 0 )
+            {
                 Address addr = new Address(Constants.NETWORK_PARAMETERS, slice);
-                tx.addOutput(new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(config.getDustValue()), addr));
+                tx.addOutput(new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(Constants.MIN_DUST), addr));
             }
         }
         Log.d("BB", tx.toString());
 
     }
 
-    private static void addChangeOutput(Configuration config, Transaction tx, List<TransactionOutput> unspents) throws Exception{
-
-        BigInteger fee      = BigInteger.valueOf(config.getFeeValue());
+    private static void addChangeOutput(Wallet keyStore, Transaction tx, List<TransactionOutput> unspents) throws Exception
+    {
+        BigInteger fee      = BigInteger.valueOf(Constants.MIN_FEE);
         BigInteger in_coin  = totalInCoin(unspents);
         BigInteger out_coin = totalOutCoin(tx);
 
@@ -110,55 +120,67 @@ public class BulletinBuilder {
         Log.d(TAG, "total |" + total.toString());
 
 
-        switch ( total.compareTo(BigInteger.ZERO) ){
+        switch ( total.compareTo(BigInteger.ZERO) )
+        {
             case  0:
             case  1:    break;
             case -1:    Log.d(TAG, Utils.bytesToHex(tx.bitcoinSerialize()) );
                 throw new Exception("out_coin + fee exceeds in_coin | " + total.toString());
         }
 
-        BigInteger min = BigInteger.valueOf(config.getMinCoinNecessary());
-        Address default_addr = new Address(Constants.NETWORK_PARAMETERS, config.getDefaultAddress());
-        while(total.compareTo(BigInteger.ZERO) == 1){
-            if(total.compareTo(min) > 0){
+        BigInteger min = BigInteger.valueOf(Constants.getMinCoinNecessary());
+//        Address default_addr = new Address(Constants.NETWORK_PARAMETERS, default_addr);
+        Address default_addr = keyStore.getChangeAddress();
+        while(total.compareTo(BigInteger.ZERO) == 1)
+        {
+            if(total.compareTo(min) > 0)
+            {
                 tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, min, default_addr) );
                 total = total.subtract(min);
-            } else{
+            }
+            else
+            {
                 tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, total, default_addr) );
                 total = total.subtract(total);
             }
         }
     }
 
-    private static BigInteger totalInCoin(List<TransactionOutput> db_unspent){
+    private static BigInteger totalInCoin(List<TransactionOutput> db_unspent)
+    {
         BigInteger in_coin = BigInteger.ZERO;
-        for(TransactionOutput out : db_unspent){
+        for(TransactionOutput out : db_unspent)
+        {
             in_coin = in_coin.add(out.getValue());
         }
         return in_coin;
     }
-    private static BigInteger totalOutCoin(Transaction tx){
+
+    private static BigInteger totalOutCoin(Transaction tx)
+    {
         BigInteger out_coin = BigInteger.ZERO;
-        for(TransactionOutput out : tx.getOutputs()){
+        for(TransactionOutput out : tx.getOutputs())
+        {
             out_coin = out_coin.add(out.getValue());
         }
         return out_coin;
     }
 
     //----------------------------------------------------------------------------------------------
-    public static Transaction createTx(Configuration config, Wallet wallet, List<TransactionOutput> unspents, String topic, String message) throws Exception{
+    public static Transaction createTx(Wallet keyStore, List<TransactionOutput> unspents, String topic, String message) throws Exception
+    {
         //create new transaction
         Transaction bulletin = new Transaction(Constants.NETWORK_PARAMETERS);
 
         //add inputs and message outputs
         addInputs(bulletin, unspents);
-        addBulletinOutputs(config, bulletin, topic, message);
+        addBulletinOutputs(bulletin, topic, message);
 
         //add change output to transaction
-        addChangeOutput(config, bulletin, unspents);
+        addChangeOutput(keyStore, bulletin, unspents);
 
         //sign the inputs
-        bulletin.signInputs(SigHash.ALL, wallet);
+        bulletin.signInputs(SigHash.ALL, keyStore);
         return bulletin;
     }
 

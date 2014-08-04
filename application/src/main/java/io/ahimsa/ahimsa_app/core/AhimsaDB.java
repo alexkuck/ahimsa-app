@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.google.bitcoin.core.Transaction;
@@ -115,9 +116,10 @@ public class AhimsaDB {
         db.insertOrThrow(db_table_txouts, null, params);
     }
 
-    public void confirmTx(String txid) {
+    public void confirmTx(String txid, Long height) {
         ContentValues param = new ContentValues();
         param.put(this.confirmed, true);
+        param.put(this.highest_block, height);
 
         String where = this.txid + " == ?";
         String[] whereArgs = {txid};
@@ -125,7 +127,19 @@ public class AhimsaDB {
         db.update(db_table_transactions, param, where, whereArgs);
     }
 
-    public boolean setStatusSpent(String txid, Long vout) {
+    public void setHighestBlock(String txid, Long height)
+    {
+        ContentValues param = new ContentValues();
+        param.put(this.highest_block, height);
+
+        String where = "(txid == ?)";
+        String[] whereArgs = {txid};
+
+        db.update(db_table_transactions, param, where, whereArgs);
+    }
+
+    public boolean setStatusSpent(String txid, Long vout)
+    {
         // if status of txout is pending, set as spent and return true
 
         setStatus(txid, vout, this.spent);
@@ -159,22 +173,24 @@ public class AhimsaDB {
     }
 
     //----------------------------------------------------------------------------------------------
-    public boolean hasTransaction(Transaction tx){
-        return hasTransaction(tx.getHashAsString());
+    public boolean hasTx(Transaction tx)
+    {
+        return getTxCursor(tx.getHashAsString()).getCount() == 1;
     }
 
-    private boolean hasTransaction(String txid_arg){
-        String sql = String.format("SELECT txid FROM %s WHERE txid == ?;", db_table_transactions);
+    public Cursor getTxCursor(String txid_arg)
+    {
+        //todo | TEMPORARY, SANITIZE
+
+        String sql = "SELECT * from transactions WHERE txid == ?;";
         String[] args = {txid_arg};
-        Cursor cursor = db.rawQuery(sql, args);
-
-        if(cursor.getCount() == 0){
-            return false;
-        }
-        return true;
+        return db.rawQuery(sql, args);
     }
+
+
     //----------------------------------------------------------------------------------------------
-    public void reserveTxOuts(Long min_coin_necessary){
+    public void reserveTxOuts(Long min_coin_necessary)
+    {
         String sql = "SELECT txouts.txid, txouts.vout, txouts.value FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                 "WHERE transactions.confirmed == 1 AND txouts.status == 'unspent' ORDER BY txouts.value DESC;";
 
@@ -182,11 +198,12 @@ public class AhimsaDB {
         Long bal = new Long(0);
 
         Cursor cursor = db.rawQuery(sql, null);
-        while(cursor.moveToNext()) {
+        while(cursor.moveToNext())
+        {
             // 0~txid (string) | 1~vout (integer) | 2~value (integer)
-            if(bal >= min) {
+            if(bal >= min)
                 break;
-            }
+
             bal += cursor.getLong(2);
             setStatusPending(cursor.getString(0), cursor.getLong(1));
         }
@@ -283,17 +300,27 @@ public class AhimsaDB {
     }
 
     //----------------------------------------------------------------------------------------------
-    public Cursor getConfirmedTxs() {
-        String ALL_CONFIRMED_TXS = String.format("SELECT * FROM %s WHERE confirmed == 1;", db_table_transactions);
+    public Cursor getConfirmedTxs(boolean just_bulletins) {
 
-        Cursor cursor = db.rawQuery(ALL_CONFIRMED_TXS, null);
+        String sql;
+        if(just_bulletins){
+            sql = String.format("SELECT * FROM transactions JOIN bulletins ON transactions.txid == bulletins.txid WHERE transactions.confirmed == 1");
+        } else {
+            sql = String.format("SELECT * FROM transactions WHERE transactions.confirmed == 1");
+        }
+
+        Cursor cursor = db.rawQuery(sql, null);
         return cursor;
     }
 
-    public Cursor getUnconfirmedTxs() {
-        String ALL_UNCONFIRMED_TXS = String.format("SELECT * FROM %s WHERE confirmed == 0;", db_table_transactions);
-
-        Cursor cursor = db.rawQuery(ALL_UNCONFIRMED_TXS, null);
+    public Cursor getUnconfirmedTxs(boolean just_bulletins) {
+        String sql;
+        if(just_bulletins){
+            sql = String.format("SELECT * FROM transactions JOIN bulletins ON transactions.txid == bulletins.txid WHERE transactions.confirmed == 0");
+        } else {
+            sql = String.format("SELECT * FROM transactions WHERE transactions.confirmed == 0");
+        }
+        Cursor cursor = db.rawQuery(sql, null);
         return cursor;
     }
 

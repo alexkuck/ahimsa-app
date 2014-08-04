@@ -96,24 +96,6 @@ public class Configuration {
 
 
     // BulletinBuilder -----------------------------------------------------------------------------
-    public Long     getMinCoinNecessary(){
-        return getFeeValue() + getDustValue()*((Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT - 1) / Constants.CHAR_PER_OUT);
-    }
-
-    public Long     getDustValue() {
-        return prefs.getLong(PREF_KEY_DUST_VALUE, Constants.MIN_DUST);
-    }
-    public void     setDustValue(long x) {
-        prefs.edit().putLong(PREF_KEY_DUST_VALUE, x).commit();
-    }
-
-    public Long     getFeeValue(){
-        return prefs.getLong(PREF_KEY_FEE_VALUE, Constants.MIN_FEE);
-    }
-    public void     setFeeValue(long x) {
-        prefs.edit().putLong(PREF_KEY_FEE_VALUE, x).commit();
-    }
-
     public String   getDefaultAddress(){
         return prefs.getString(PREF_KEY_DEFAULT_ADDRESS, "");
     }

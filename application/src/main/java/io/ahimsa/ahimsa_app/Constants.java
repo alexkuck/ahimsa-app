@@ -4,6 +4,8 @@ import com.google.bitcoin.core.NetworkParameters;
 import com.google.bitcoin.params.MainNetParams;
 import com.google.bitcoin.params.TestNet3Params;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by askuck on 7/11/14.
  */
@@ -37,15 +39,20 @@ public class Constants {
     public static final boolean TESTNET = true;
     public static final NetworkParameters NETWORK_PARAMETERS = TESTNET ? TestNet3Params.get() : MainNetParams.get();
 
+    public static final Long THREE_DAYS = TimeUnit.MILLISECONDS.convert(3, TimeUnit.DAYS);;
+
     public static final Long MIN_DUST = new Long(546);
     public static final Long MIN_FEE = new Long(10000);
+    public static final Long getMinCoinNecessary(){
+        return Constants.MIN_FEE + Constants.MIN_DUST*((Constants.MAX_TOPIC_LEN + Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT - 1) / Constants.CHAR_PER_OUT);
+    }
 
     public static final int MAX_MESSAGE_LEN = 500;
-    public static final int MAX_TOPIC_LEN = 15;
+    public static final int MAX_TOPIC_LEN = 50;
     public static final int CHAR_PER_OUT = 20;
 
     public static final byte[] AHIMSA_BULLETIN_PREFIX = "BRETHREN".getBytes();
-    public static final String DEFAULT_TOPIC = "Let it be known";
+    public static final String DEFAULT_TOPIC = "ahimsa-dev";
 
     private static final String FILENAME_NETWORK_SUFFIX = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? "" : "-testnet";
     public static final String WALLET_FILENAME_PROTOBUF = "wallet-protobuf" + FILENAME_NETWORK_SUFFIX;

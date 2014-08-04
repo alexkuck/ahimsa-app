@@ -3,6 +3,7 @@ package io.ahimsa.ahimsa_app.core;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -17,13 +18,17 @@ import com.google.bitcoin.store.BlockStore;
 import com.google.bitcoin.store.BlockStoreException;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Stack;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
+import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 
-public class AhimsaService extends IntentService {
-    private static final String ACTION_NETWORK_TEST = AhimsaService.class.getPackage().getName() + ".network_test";
+public class AhimsaService extends IntentService
+{
+    private static final String ACTION_NETWORK_TEST         = AhimsaService.class.getPackage().getName() + ".network_test";
     private static final String ACTION_RESET_AHIMSA_WALLET  = AhimsaService.class.getPackage().getName() + ".reset";
     private static final String ACTION_BROADCAST_BULLETIN   = AhimsaService.class.getPackage().getName() + ".broadcast_bulletin";
     private static final String ACTION_BROADCAST_TX         = AhimsaService.class.getPackage().getName() + ".broadcast_tx";
@@ -41,21 +46,26 @@ public class AhimsaService extends IntentService {
 
     private AhimsaApplication application;
     private AhimsaWallet ahimwall;
+    private BitcoinNode node;
+    private Configuration config;
     private String TAG = "AhismaService";
 
-    public static void startNetworkTest(Context context) {
+    public static void startNetworkTest(Context context)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_NETWORK_TEST);
         context.startService(intent);
     }
 
-    public static void startResetAhimsaWallet(Context context) {
+    public static void startResetAhimsaWallet(Context context)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_RESET_AHIMSA_WALLET);
         context.startService(intent);
     }
 
-    public static void startBroadcastBulletin(Context context, String topic, String message, Long fee) {
+    public static void startBroadcastBulletin(Context context, String topic, String message, Long fee)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_BROADCAST_BULLETIN);
         intent.putExtra(EXTRA_STRING_TOPIC, topic);
@@ -64,7 +74,8 @@ public class AhimsaService extends IntentService {
         context.startService(intent);
     }
 
-    public static void startBroadcastTx(Context context, byte[] tx_raw, boolean assume_confirmed){
+    public static void startBroadcastTx(Context context, byte[] tx_raw, boolean assume_confirmed)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_BROADCAST_TX);
         intent.putExtra(EXTRA_BYTE_ARRAY_TX, tx_raw);
@@ -72,42 +83,61 @@ public class AhimsaService extends IntentService {
         context.startService(intent);
     }
 
-    public static void startSyncBlockChain(Context context) {
+    public static void startSyncBlockChain(Context context)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_SYNC_BLOCK_CHAIN);
         context.startService(intent);
     }
 
-    public static void startImportBlock(Context context, Long height) {
+    public static void startImportBlock(Context context, Long height)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_IMPORT_BLOCK);
         intent.putExtra(EXTRA_LONG_HEIGHT, height);
         context.startService(intent);
     }
 
-    public static void startConfirmTx(Context context, String txid) {
+    public static void startConfirmTx(Context context, String txid)
+    {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_CONFIRM_TX);
         intent.putExtra(EXTRA_STRING_TXID, txid);
         context.startService(intent);
     }
 
-    public AhimsaService() {
+    public AhimsaService()
+    {
         super("AhimsaService");
     }
 
     //----------------------------------------------------------------------------------------------
-    public void onCreate() {
-        // todo | start bitcoin node with chain within onCreate(), maybe.
+    public void onCreate()
+    {
         application = (AhimsaApplication) getApplication();
         ahimwall = application.getAhimsaWallet();
+        config = application.getConfig();
+        node = new BitcoinNode(this, application);
+
+        try
+        {
+            node.startPeerGroup(application.getBlockChain());
+        }
+        catch (Exception e)
+        {
+            // no internet connection exists
+            e.printStackTrace();
+        }
+
         super.onCreate();
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (ACTION_BROADCAST_BULLETIN.equals( intent.getAction() )) {
-            // todo | think this through; decide on best implementation.
+    public int onStartCommand(Intent intent, int flags, int startId)
+    {
+        if( ACTION_BROADCAST_BULLETIN.equals(intent.getAction()) )
+        {
+//            todo | think this through; decide on best implementation.
 //            final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
 //            final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
 //            final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
@@ -121,49 +151,62 @@ public class AhimsaService extends IntentService {
     }
 
     @Override
-    public void onDestroy() {
-        // todo | stop bitcoin node within onDestroy(), maybe.
+    public void onDestroy()
+    {
         ahimwall.removeAllReservations();
+        node.stopPeerGroup();
+
         super.onDestroy();
     }
 
     //----------------------------------------------------------------------------------------------
     @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
+    protected void onHandleIntent(Intent intent)
+    {
+        if(intent != null)
+        {
             Log.d(TAG, "Commencing AhimsaService, action | " + intent.getAction());
             final String action = intent.getAction();
 
-            if (ACTION_NETWORK_TEST.equals(action)) {
+            if(ACTION_NETWORK_TEST.equals(action))
+            {
                 handleNetworkTest();
             }
-            else if (ACTION_RESET_AHIMSA_WALLET.equals(action)) {
+            else if(ACTION_RESET_AHIMSA_WALLET.equals(action))
+            {
                 handleResetAhimsaWallet();
             }
-            else if (ACTION_BROADCAST_BULLETIN.equals(action)) {
+            else if(ACTION_BROADCAST_BULLETIN.equals(action))
+            {
                 final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
                 final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
                 final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
                 handleBroadcastBulletin(topic, message, fee);
             }
-            else if (ACTION_BROADCAST_TX.equals(action)) {
+            else if(ACTION_BROADCAST_TX.equals(action))
+            {
                 final byte[] tx_raw = intent.getByteArrayExtra(EXTRA_BYTE_ARRAY_TX);
                 final boolean assume_confirmed = intent.getBooleanExtra(EXTRA_BOOLEAN_ASSUME_CONF, false);
                 handleBroadcastTx(tx_raw, assume_confirmed);
             }
-            else if (ACTION_SYNC_BLOCK_CHAIN.equals(action)) {
+            else if(ACTION_SYNC_BLOCK_CHAIN.equals(action))
+            {
                 handleSyncBlockChain();
             }
-            else if (ACTION_IMPORT_BLOCK.equals(action)) {
+            else if(ACTION_IMPORT_BLOCK.equals(action))
+            {
                 final long height = intent.getLongExtra(EXTRA_LONG_HEIGHT, -1);
                 handleImportBlock(height);
             }
-            else if (ACTION_CONFIRM_TX.equals(action)) {
+            else if(ACTION_CONFIRM_TX.equals(action))
+            {
                 final String txid = intent.getStringExtra(EXTRA_STRING_TXID);
                 handleConfirmTx(txid);
             }
 
+            //todo: certain updates for certain actions
             broadcastUpdateIntent();
+
             Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
         }
     }
@@ -175,14 +218,16 @@ public class AhimsaService extends IntentService {
         LocalBroadcastManager.getInstance(this).sendBroadcast(update_intent);
     }
     //----------------------------------------------------------------------------------------------
-    private void handleNetworkTest() {
-        BitcoinNode node = new BitcoinNode(this, application);
-        try {
-            node.startPeerGroup(null);
-            Long netheight = node.getNetworkHeight();
-            Log.d(TAG, "GETNETWORKHEIGHT: " + netheight);
-            node.stopPeerGroup();
-        } catch (Exception e) {
+    private void handleNetworkTest()
+    {
+        try
+        {
+            Long peergroup_height = node.getNetworkHeight();
+            config.setHighestBlockSeen( Math.max(peergroup_height, config.getHighestBlockSeen()) );
+        }
+        catch (Exception e)
+        {
+            //peergroup is null
             e.printStackTrace();
         }
 
@@ -190,126 +235,103 @@ public class AhimsaService extends IntentService {
         // todo | restore from backup if inconsistent. reset if backup also inconsistent.
     }
 
-    private void handleResetAhimsaWallet() {
+    private void handleResetAhimsaWallet()
+    {
+        // todo | implement.
         // Reset then re-initialization config, database, and keyStore.
-//        ahimwall.reset();
+        //ahimwall.reset();
+
         ahimwall.toLog();
     }
 
 
-    private void handleBroadcastBulletin(String topic, String message, Long fee) {
-        Transaction bulletin;
+    private void handleBroadcastBulletin(String topic, String message, Long fee)
+    {
+        Transaction bulletin = null;
 
-        // Create bulletin.  BulletinBuilder can throw an exception.
-        try {
+        try
+        {
             bulletin = ahimwall.createAndAddBulletin(topic, message, fee);
-        } catch (Exception e) {
-//            application.makeLongToast("Fail: could not construct bulletin.");
+        }
+        catch (Exception e)
+        {
+            // insufficient funds
             e.printStackTrace();
-            return;
         }
 
-        // Broadcast transaction on successful creation of bulletin.
-        // If broadcast fails, store the topic, message, and fee.
-        BitcoinNode node = new BitcoinNode(this, application);
-        try {
-            node.startPeerGroup(null);
-            Long highest_block = node.broadcastTx(bulletin);
-            ahimwall.commitTransaction(bulletin, highest_block, true);
-//            application.makeLongToast("Woot woot! Successfully broadcast bulletin: " + bulletin.getHashAsString());
-        } catch (Exception e) {
-            ahimwall.unreserveTxOuts();
-//            application.makeLongToast("Fail: could not broadcast bulletin.");
-            e.printStackTrace();
-        } finally {
-            node.stopPeerGroup();
+        if(bulletin != null)
+        {
+            try
+            {
+                Long highest_block = node.broadcastTx(bulletin);
+                ahimwall.commitTransaction(bulletin, highest_block, false);
+            }
+            catch (Exception e)
+            {
+                // Peergroup was null or transaction future was not received
+                ahimwall.unreserveTxOuts();
+                e.printStackTrace();
+            }
         }
+
     }
 
-    private void handleBroadcastTx(byte[] tx_raw, boolean assume_confirmed) {
+    private void handleBroadcastTx(byte[] tx_raw, boolean assume_confirmed)
+    {
         Transaction tx = new Transaction(Constants.NETWORK_PARAMETERS, tx_raw);
 
-        // Attempt broadcast of transaction. Commit status dependent upon assume_confirmed.
-        BitcoinNode node = new BitcoinNode(this, application);
-        try {
-            node.startPeerGroup(null);
+        try
+        {
             Long highest_block = node.broadcastTx(tx);
-
             ahimwall.commitTransaction(tx, highest_block, assume_confirmed);
-
-//            application.makeLongToast("Woot woot! Successfully broadcast transaction: " + tx.getHashAsString());
-
-        } catch (Exception e) {
-//            application.makeLongToast("Fail: could not broadcast bulletin.");
-            ahimwall.unreserveTxOuts();
-            e.printStackTrace();
-        } finally {
-            node.stopPeerGroup();
         }
-
-
+        catch (Exception e)
+        {
+            // Peergroup was null or transaction future was not received
+            e.printStackTrace();
+        }
     }
 
-    private void handleSyncBlockChain() {
-        BitcoinNode node = new BitcoinNode(this, application);
-        try{
-            node.startPeerGroup(application.getBlockChain());
+    private void handleSyncBlockChain()
+    {
+        try
+        {
             node.downloadBlockChain();
-        } catch (Exception e) {
-//            application.makeLongToast("Fail: could not sync block chain.");
-            e.printStackTrace();
-        } finally {
-            node.stopPeerGroup();
         }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
-    private void handleImportBlock(Long import_height) {
+    private void handleImportBlock(Long import_height)
+    {
         AbstractBlockChain chain = application.getBlockChain();
         Block complete_block = null;
 
-        BitcoinNode node = new BitcoinNode(this, application);
-        try{
-            if(chain.getBestChainHeight() < import_height){
-                // The local chain's height less than the requested block's height.
-                node.startPeerGroup(chain);
-                Long network_best_height = node.getNetworkHeight();
+        try
+        {
+            if(import_height > node.getNetworkHeight())
+                return;
 
-                if(network_best_height >= import_height){
-                    // The network's height is greater than or equal to the requested block's height.
-                    node.downloadBlockChain();
-
-                } else {
-                    // import_height exceeds network_best_height, invalid import_height.
-                    node.stopPeerGroup();
-                    return;
-                }
-            } else {
-                // The local chain has the requested block.
-                node.startPeerGroup(null);
-            }
-
-            // At this point, the PeerGroup is alive and the local block chain is synced.
-            // Block import_height's header is within the local chain thus we possess its' hash.
-            // We now request this block, using the hash, from the PeerGroup then shutdown the PeerGroup.
+            if(import_height >= chain.getBestChainHeight() )
+                node.downloadBlockChain();
 
             StoredBlock targetBlock = getBlock(chain.getBlockStore(), import_height);
             Sha256Hash hash = targetBlock.getHeader().getHash();
             complete_block = node.downloadBlock(hash);
-
-        } catch (Exception e) {
-//            application.makeLongToast("Fail: could not import block.");
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
-        } finally {
-            node.stopPeerGroup();
         }
 
-        // Fantastic! If execution comes this far we have the complete_block at import_height.
-        // PeerGroup has successfully shutdown.  Let us search complete_block for any relevant
-        // transactions and appropriately deal with each transaction.
-
-        if( complete_block != null ) {
+        if( complete_block != null )
+        {
             List<Transaction> relevantTxs = findRelevantTxs(complete_block);
-            for(Transaction tx : relevantTxs) {
+
+            for(Transaction tx : relevantTxs)
+            {
                 ahimwall.commitTransaction(tx, import_height, true);
             }
         }
@@ -318,52 +340,185 @@ public class AhimsaService extends IntentService {
 
     public void handleConfirmTx(String txid) {
 
-        // verify txid is in ahimwall
-        // verify txid is not confirmed
+        //todo fail feedback
 
-        // derive limiting_block from broadcast time
-        // highest_block_checked
+        Log.d(TAG, "handleConfirmTx | " + txid);
 
-        // if highest block < local chain height
-        //      have all hashes, download blockchain unnecessary
-        // else
-        //      download blockchain
+        Bundle bundle = ahimwall.getTxBundle(txid);
+        if(bundle == null)
+            return;
 
+        if(bundle.getBoolean(AhimsaDB.confirmed))
+            return;
+
+        Log.d(TAG, "Bundle is not null and tx is unconfirmed");
+
+        Long upper_time = bundle.getLong(AhimsaDB.sent_time) + Constants.THREE_DAYS;
+        AbstractBlockChain chain = application.getBlockChain();
+
+        if(chain.getChainHead().getHeader().getTimeSeconds() < upper_time)
+        {
+            try
+            {
+                Log.d(TAG, "Start download block chain");
+                node.downloadBlockChain();
+                Log.d(TAG, "Finish download block chain");
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        Long lower_height = bundle.getLong(AhimsaDB.highest_block);
+        Stack<Sha256Hash> hashes = getSequentialHashes(chain.getBlockStore(), lower_height, upper_time);
+
+        Log.d(TAG, "lower_height | " + lower_height.toString());
+        Log.d(TAG, "upper_time   | " + upper_time.toString());
+
+        if(hashes == null)
+            return;
+
+        try
+        {
+            while( !hashes.isEmpty() )
+            {
+                Block downloaded = node.downloadBlock( hashes.pop() );
+                Log.d(TAG, "downloaded hash | " + downloaded.getHashAsString());
+                lower_height += 1;
+                Log.d(TAG, "lower_height| " + downloaded.getHashAsString());
+
+                if( containsTx(downloaded, txid) )
+                {
+                    Log.d(TAG, "CONTAINED TX in " + downloaded.getHashAsString());
+                    ahimwall.confirmTx(txid, lower_height);
+                    break;
+                }
+
+                // todo seconds vs milliseconds
+                if( downloaded.getTimeSeconds() > upper_time )
+                {
+                    ahimwall.dropTx(txid, lower_height);
+                    break;
+                }
+                Log.d(TAG, "set highest block " + lower_height.toString());
+                ahimwall.setHighestBlock(txid, lower_height);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        //TODO TEMPORARY
+        ahimwall.setHighestBlock(txid, bundle.getLong(AhimsaDB.highest_block));
 
     }
 
     // Private Utilities ---------------------------------------------------------------------------
-    private StoredBlock getBlock(BlockStore store, Long height){
-        try {
+    private Stack<Sha256Hash> getSequentialHashes(BlockStore store, Long lower_height, Long upper_time)
+    {
+        Stack<Sha256Hash> hashes = new Stack<Sha256Hash>();
+
+        try
+        {
             StoredBlock current = store.getChainHead();
-            if (height > current.getHeight()) {
-                return null;
-            }
-            for (int i = current.getHeight(); i > height; i -= 1) {
+            Log.d(TAG, "initial current | " + current.getHeader().getHashAsString());
+            Log.d(TAG, "Current sent_time: " + current.getHeader().getTimeSeconds() );
+            Log.d(TAG, "upper_time: " + upper_time );
+
+            // This overshoot is imperative, A transaction is only dropped from AhimsaWallet when a
+            // block's timestamp is greater than the upper_time estimate.
+            while(current.getHeader().getTimeSeconds() > upper_time  + (Constants.THREE_DAYS / 24))
+            {
                 StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
                 current = previous;
+                Log.d(TAG, "upper_time current | " + current.getHeader().getHashAsString());
             }
-            return current;
-        } catch (BlockStoreException e) {
+
+            Log.d(TAG, "lower_height: " + lower_height);
+            while(current.getHeight() > lower_height)
+            {
+                hashes.push(current.getHeader().getHash());
+                StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
+                current = previous;
+                Log.d(TAG, "lower_height current | " + current.getHeader().getHashAsString());
+                Log.d(TAG, "lower_height current.height | " + current.getHeight());
+            }
+
+            return hashes;
+        }
+        catch (BlockStoreException e)
+        {
+            e.printStackTrace();
             return null;
         }
     }
 
-    private List<Transaction> findRelevantTxs(Block block) {
+    private boolean containsTx(Block check_me, String txid)
+    {
+        for(Transaction tx : check_me.getTransactions() )
+        {
+            Log.d(TAG, "tx: " + tx.getHashAsString());
+            if(tx.getHashAsString().equals(txid))
+                return true;
+        }
+
+        return false;
+    }
+
+    private StoredBlock getBlock(BlockStore store, Long height)
+    {
+        try
+        {
+            StoredBlock current = store.getChainHead();
+            if(height > current.getHeight() || height < 0)
+            {
+                return null;
+            }
+
+            while(current.getHeight() > height)
+            {
+                StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
+                current = previous;
+            }
+
+//            for(int i = current.getHeight(); i > height; i -= 1)
+//            {
+//                StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());
+//                current = previous;
+//            }
+
+            return current;
+        }
+        catch (BlockStoreException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private List<Transaction> findRelevantTxs(Block block)
+    {
         List<Transaction> foundTxs = new ArrayList<Transaction>();
-        for (Transaction tx : block.getTransactions()) {
+        for( Transaction tx : block.getTransactions() )
+        {
             Log.d(TAG, tx.getHashAsString());
-            if (isMyTx(tx, ahimwall.getKeyStore())){
+            if( isMyTx(tx, ahimwall.getKeyStore()) )
+            {
                 foundTxs.add(tx);
             }
         }
         return foundTxs;
     }
 
-    public boolean isMyTx(Transaction tx, Wallet wallet) {
+    public boolean isMyTx(Transaction tx, Wallet wallet)
+    {
         // Determine if a transaction is relevant to a wallet's keys.
-        for (TransactionOutput txOut : tx.getOutputs()) {
-            if (txOut.isMine(wallet)) {
+        for(TransactionOutput txOut : tx.getOutputs())
+        {
+            if(txOut.isMine(wallet))
+            {
                 return true;
             }
         }

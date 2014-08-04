@@ -383,6 +383,7 @@
                         android:layout_centerHorizontal="true"/>
 
                     <TextView
+                        android:id="@+id/unconfirmed_bulletins_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Bulletins"
@@ -423,7 +424,95 @@
         android:layout_alignParentStart="true"
         android:layout_above="@+id/horizontal_line_3"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"></LinearLayout>
+        android:layout_alignParentEnd="true"
+        android:paddingLeft="30dp"
+        android:paddingRight="30dp"
+        android:gravity="center_vertical">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+
+        </RelativeLayout>
+
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Wireless Connection"
+                android:textStyle="italic"
+                android:gravity="left"/>
+
+            <TextView
+                android:id="@+id/wireless_connection_value"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textStyle="bold|italic"
+                android:text="OK "/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Bitcoin Mainnet"
+                android:textStyle="italic"
+                android:gravity="left"/>
+
+            <TextView
+                android:id="@+id/bitcoin_mainnet_value"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:text="OK "
+                android:textStyle="bold|italic"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Twitter"
+                android:textStyle="italic"
+                android:gravity="left"/>
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textStyle="bold|italic"
+                android:text="OK "/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+
+        </RelativeLayout>
+
+
+        </LinearLayout>
 
 
 
@@ -445,16 +534,28 @@
         android:layout_alignParentStart="true" />
 
     <TextView
+        android:id="@+id/device_address"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textStyle="bold|italic"
+        android:paddingLeft="5dip"
+        android:paddingRight="5dip"
+        android:paddingTop="10dip"
+        android:text="Device Address:"
+        android:layout_alignTop="@+id/qr_value"
+        android:layout_toRightOf="@+id/qr_value"/>
+
+    <TextView
         android:id="@+id/full_address_value"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:paddingLeft="5dip"
         android:paddingRight="5dip"
-        android:paddingTop="15dip"
         android:paddingBottom="5dip"
         android:text="mpRZxxp5FtmQipEWJPa1NY9FmPsva3exUd"
-        android:layout_alignTop="@+id/qr_value"
+        android:layout_below="@+id/device_address"
         android:layout_toRightOf="@+id/qr_value"/>
 
     <View

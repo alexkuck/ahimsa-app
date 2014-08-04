@@ -134,16 +134,16 @@ public class CreateBulletinActivity extends Activity {
             String topic   = bulletin_bundle.getString(frag.EXTRA_STRING_TOPIC);
             String message = bulletin_bundle.getString(frag.EXTRA_STRING_MESSAGE);
 
-            Long estimate = Utils.getEstimatedCost(config.getFeeValue(), config.getDustValue(), topic.length(), message.length());
+            Long estimate = Utils.getEstimatedCost(Constants.MIN_FEE, Constants.MIN_DUST, topic.length(), message.length());
             Log.d("createdBulletinActivity", "estimated cost: " + estimate);
 
-            if(config.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(true)) {
-                AhimsaService.startBroadcastBulletin(this, topic, message, config.getFeeValue());
+            if(Constants.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(false)) {
+                AhimsaService.startBroadcastBulletin(this, topic, message, Constants.MIN_FEE);
                 finish();
             } else {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Womp! Not enough coin.");
-                builder.setMessage(String.format("%s confirmed Satoshis are required to create a bulletin. \n\nOur apologies, a future version will not have this limitation...", config.getMinCoinNecessary()));
+                builder.setMessage(String.format("%s confirmed Satoshis are required to create a bulletin. \n\nOur apologies, a future version will not have this limitation...", Constants.getMinCoinNecessary()));
                 final AlertDialog dialog = builder.create();
                 dialog.show();
             }

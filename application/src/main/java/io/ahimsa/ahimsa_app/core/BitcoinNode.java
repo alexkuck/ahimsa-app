@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
@@ -31,7 +32,8 @@ import io.ahimsa.ahimsa_app.Constants;
 /**
  * Created by askuck on 7/11/14.
  */
-public class BitcoinNode {
+public class BitcoinNode
+{
     private String TAG = "BitcoinNode";
 
     private Context context;
@@ -41,38 +43,36 @@ public class BitcoinNode {
     private PowerManager.WakeLock wakeLock;
     private PeerGroup peerGroup;
 
-    public BitcoinNode(Context context, AhimsaApplication application) {
+    public BitcoinNode(Context context, AhimsaApplication application)
+    {
         this.context = context;
         this.application = application;
         this.config = application.getConfig();
     }
 
     // Start and stop PeerGroup --------------------------------------------
-    public void startPeerGroup(@Nullable AbstractBlockChain chain) throws Exception {
+    public void startPeerGroup(@Nonnull AbstractBlockChain chain) throws Exception
+    {
         final String lockName = context.getPackageName() + " peer connection";
         final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
 
         ConnectionDetector cd = new ConnectionDetector(context.getApplicationContext());
 
-        if (cd.isConnectingToInternet()) {
+        if (cd.isConnectingToInternet())
+        {
             Log.d(TAG, "acquiring wakelock");
             wakeLock.acquire();
 
-            if (chain != null) {
-                Log.d(TAG, "starting peergroup WITH an associated chain");
-                peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, chain);
-                peerGroup.setFastCatchupTimeSecs(application.getAhimsaWallet().getKeyStore().getEarliestKeyCreationTime());
-            } else {
-                Log.d(TAG, "starting peergroup WITHOUT an associated chain");
-                peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS);
-            }
+            Log.d(TAG, "starting peergroup");
+            peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, chain);
+            peerGroup.setFastCatchupTimeSecs(application.getAhimsaWallet().getKeyStore().getEarliestKeyCreationTime());
             peerGroup.setUserAgent(Constants.USER_AGENT, Constants.VERSION);
-
             Log.d(TAG, "started peergroup");
+
+
             final boolean hasTrustedPeer = !config.getTrustedPeer().isEmpty();
             peerGroup.setMaxConnections(hasTrustedPeer ? 1 : config.getMaxConnectedPeers());
-
             peerGroup.addPeerDiscovery(new PeerDiscovery() {
                 private final PeerDiscovery normalPeerDiscovery = new DnsDiscovery(Constants.NETWORK_PARAMETERS);
 
@@ -109,24 +109,28 @@ public class BitcoinNode {
                 }
             });
 
-
             peerGroup.startAndWait();
-            peerGroup.waitForPeers(config.getMinConnectedPeers()).get(config.getTimeout(), TimeUnit.SECONDS);
+            peerGroup.waitForPeers( config.getMinConnectedPeers()).get(config.getTimeout(), TimeUnit.SECONDS );
 
             Log.d(TAG, "pending peers  : " + peerGroup.getPendingPeers());
             Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());
-        } else {
-            throw new Exception();
+        }
+        else
+        {
+            throw new RuntimeException("No internet connection present");
         }
     }
 
-    public void stopPeerGroup() {
-        if (peerGroup != null) {
+    public void stopPeerGroup()
+    {
+        if (peerGroup != null)
+        {
             peerGroup.stopAndWait();
             Log.d(TAG, "peergroup stopped");
         }
 
-        if (wakeLock.isHeld()) {
+        if (wakeLock.isHeld())
+        {
             Log.d(TAG, "wakelock still held, releasing");
             wakeLock.release();
         }
@@ -134,10 +138,12 @@ public class BitcoinNode {
 
 
     // Public actions on PeerGroup ----------------------------------------------------------
-    public Long broadcastTx(Transaction tx) throws Exception {
+    public Long broadcastTx(Transaction tx) throws Exception
+    {
         Log.d(TAG, "Broadcasting transaction: " + Utils.bytesToHex(tx.bitcoinSerialize()));
 
-        if (peerGroup != null) {
+        if (peerGroup != null)
+        {
             Long highest_block = getNetworkHeight();
             ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx.bitcoinSerialize()));
             future.get(config.getTimeout(), TimeUnit.SECONDS);
@@ -145,61 +151,79 @@ public class BitcoinNode {
             Log.d(TAG, "Received future, success:" + future.get().toString());
             return highest_block;
 
-        } else {
-            Log.d(TAG, "Broadcast Fail, peerGroup null.");
-            throw new Exception();
+        }
+        else
+        {
+            throw new RuntimeException("PeerGroup null");
         }
 
     }
 
-    public Long getNetworkHeight() {
-        if (peerGroup != null) {
+    public Long getNetworkHeight() throws Exception
+    {
+        if (peerGroup != null)
+        {
             Long peer_best = new Long( peerGroup.getMostCommonChainHeight() );
 //            Long peer_best = new Long(peerGroup.getDownloadPeer().getBestHeight());
-            config.setHighestBlockSeen( Math.max(peer_best, config.getHighestBlockSeen()) );
 
             return peer_best;
         }
-
-        return new Long(0);
-    }
-
-    public void downloadBlockChain() throws Exception{
-        if(peerGroup != null) {
-            peerGroup.downloadBlockChain();
-        } else {
-            Log.d(TAG, "DownloadBlockChain Fail, peerGroup null.");
-            throw new Exception();
+        else
+        {
+            throw new RuntimeException("PeerGroup null");
         }
     }
 
-    public Block downloadBlock(Sha256Hash hash) throws Exception {
-        if(peerGroup != null) {
+    public void downloadBlockChain() throws Exception
+    {
+        if(peerGroup != null)
+        {
+//            peerGroup.downloadBlockChain();
+            peerGroup.startBlockChainDownload(new MyDownloadListener());
+        }
+        else
+        {
+            throw new RuntimeException("PeerGroup null");
+        }
+    }
+
+    public Block downloadBlock(Sha256Hash hash) throws Exception
+    {
+        if(peerGroup != null)
+        {
             return peerGroup.getDownloadPeer().getBlock(hash).get();
-        } else {
-            throw new Exception();
+        }
+        else
+        {
+            throw new RuntimeException("PeerGroup null");
         }
     }
 
     // Utilities -----------------------------------------------------------------------------------
-    private class ConnectionDetector {
+    private class ConnectionDetector
+    {
         private Context _context;
 
-        public ConnectionDetector(Context context
-        ) {
+        public ConnectionDetector(Context context)
+        {
             this._context = context;
         }
 
-        public boolean isConnectingToInternet() {
+        public boolean isConnectingToInternet()
+        {
             ConnectivityManager connectivity = (ConnectivityManager) _context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            if (connectivity != null) {
+            if (connectivity != null)
+            {
                 NetworkInfo[] info = connectivity.getAllNetworkInfo();
                 if (info != null)
-                    for (NetworkInfo anInfo : info)
-                        if (anInfo.getState() == NetworkInfo.State.CONNECTED) {
+                {
+                    for (NetworkInfo anInfo : info){
+                        if (anInfo.getState() == NetworkInfo.State.CONNECTED)
+                        {
                             return true;
                         }
-
+                    }
+                }
             }
             return false;
         }

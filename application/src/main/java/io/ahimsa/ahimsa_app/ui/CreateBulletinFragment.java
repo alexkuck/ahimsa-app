@@ -10,18 +10,12 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
-import io.ahimsa.ahimsa_app.AhimsaApplication;
-import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.Utils;
 
 
 public class CreateBulletinFragment extends Fragment {
-
-    Configuration config;
 
     private TextView messageCount;
     private TextView topicCount;
@@ -40,14 +34,11 @@ public class CreateBulletinFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        CreateBulletinActivity activity = (CreateBulletinActivity) getActivity();
-        config = activity.getConfig();
-
         View v = inflater.inflate(R.layout.fragment_create_bulletin, container, false);
         updateView(v, getArguments());
 
         estimatedCost = (TextView) v.findViewById(R.id.estimated_cost_value);
-        estimatedCost.setText(String.valueOf(config.getFeeValue()));
+        estimatedCost.setText(String.valueOf(Constants.MIN_FEE).replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
 
         EditText topicEditText = (EditText) v.findViewById(R.id.topic_edit_text);
         topicCount = (TextView) v.findViewById(R.id.topic_count_value);
@@ -101,7 +92,8 @@ public class CreateBulletinFragment extends Fragment {
     private void setEstimatedCost() {
         int x = (top_count + msg_count) % Constants.CHAR_PER_OUT;
         if(x == 0 || x == 1 || x == 19) {
-            estimatedCost.setText(String.valueOf(Utils.getEstimatedCost(config.getFeeValue(), config.getDustValue(), top_count, msg_count)));
+            String est = String.valueOf(Utils.getEstimatedCost(Constants.MIN_FEE, Constants.MIN_DUST, top_count, msg_count));
+            estimatedCost.setText(est.replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
         }
     }
 
@@ -120,7 +112,7 @@ public class CreateBulletinFragment extends Fragment {
 
             Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL);
             final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_balance_value);
-            confirmed_value.setText(confirmed_balance.toString());
+            confirmed_value.setText(confirmed_balance.toString().replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
 
 
             final TextView checksum_value = (TextView) v.findViewById(R.id.checksum_value);

@@ -116,7 +116,8 @@
         android:singleLine="true"
         android:layout_below="@+id/address_value"
         android:layout_alignParentLeft="true"
-        android:background="@null"/>
+        android:background="@null"
+        android:text="ahimsa-dev"/>
 
     <View
         android:layout_width="match_parent"

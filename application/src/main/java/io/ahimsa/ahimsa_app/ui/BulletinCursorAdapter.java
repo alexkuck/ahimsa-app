@@ -28,66 +28,6 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
         super(context, layout, c, flags);
     }
 
-    /*@Override
-    public View getView(int position, View view, ViewGroup parent) {
-        Log.d(TAG, "getView()");
-
-        if(view == null){
-            view = infl
-        }
-
-
-        TextView time_value = (TextView) view.findViewById(R.id.time_value);
-        Long time = getCursor().getLong(2);
-//        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm yyyy-MM-dd");
-//        sdf.format(new Date(time));
-//        time_value.setText( sdf.toPattern() );
-        time_value.setText(time.toString());
-
-
-        TextView status_value = (TextView) view.findViewById(R.id.status_value);
-        int confirmed = getCursor().getInt(3);
-        if(confirmed == 0 ) {
-            status_value.setText("Unconfirmed");
-            status_value.setTextColor(Color.RED);
-        } else {
-            status_value.setText("Confirmed");
-        }
-
-        TextView topic_value = (TextView) view.findViewById(R.id.topic_value);
-        String topic = getCursor().getString(5);
-        topic_value.setText(topic);
-
-        TextView message_value = (TextView) view.findViewById(R.id.message_value);
-        String message = getCursor().getString(6);
-        message_value.setText(message);
-
-        TextView change_value = (TextView) view.findViewById(R.id.change_value);
-        Long txout_total = getCursor().getLong(7);
-        Long txout_count = getCursor().getLong(8);
-        change_value.setText( String.format("%s (%s)", txout_total, txout_count) );
-
-        Button confirm_button = (Button) view.findViewById(R.id.confirm_button);
-        confirm_button.setTag( getCursor().getString(1) );
-        confirm_button.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d("bulletinCursorAdapter", "BUTTON CLICKED: " + view.getTag());
-            }
-        });
-
-        Button details_button = (Button) view.findViewById(R.id.details_button);
-        details_button.setTag( getCursor().getString(1) );
-        details_button.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d("bulletinCursorAdapter", "BUTTON CLICKED: " + view.getTag());
-            }
-        });
-
-        return view;
-
-    }*/
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
@@ -105,12 +45,18 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
 
         TextView status_value = (TextView) view.findViewById(R.id.status_value);
         int confirmed = cursor.getInt(3);
-        if(confirmed == 0 ) {
-            status_value.setText("Unconfirmed");
-            status_value.setTextColor(Color.RED);
-        } else {
-            status_value.setText("Confirmed");
+        switch(confirmed){
+            case 0:
+                status_value.setText("Unconfirmed");
+                status_value.setTextColor(Color.rgb(194, 0, 48));
+                break;
+
+            default:
+                status_value.setText("Confirmed");
+//                status_value.setTextColor(status_value.getTextColors().getDefaultColor());
+                status_value.setTextColor(Color.BLACK);
         }
+
 
         TextView topic_value = (TextView) view.findViewById(R.id.topic_value);
         String topic = cursor.getString(5);
