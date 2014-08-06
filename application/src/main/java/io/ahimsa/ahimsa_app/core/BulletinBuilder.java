@@ -48,6 +48,7 @@ public class BulletinBuilder
         return -1;
     }
 
+
     private static void addBulletinOutputs(Transaction tx, String topic, String message)
     {
         // Verify topic + message length is valid

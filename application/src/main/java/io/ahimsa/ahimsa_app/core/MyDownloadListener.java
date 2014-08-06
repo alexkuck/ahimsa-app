@@ -2,8 +2,8 @@ package io.ahimsa.ahimsa_app.core;
 
 import android.util.Log;
 
+import com.google.bitcoin.core.AbstractPeerEventListener;
 import com.google.bitcoin.core.Block;
-import com.google.bitcoin.core.DownloadListener;
 import com.google.bitcoin.core.Peer;
 
 import java.text.DateFormat;
@@ -13,7 +13,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Created by askuck on 8/4/14.
  */
-public class MyDownloadListener extends DownloadListener
+public class MyDownloadListener extends AbstractPeerEventListener
 {
     public static final String TAG = "MyDownloadListener";
     private int originalBlocksLeft = -1;
@@ -21,7 +21,6 @@ public class MyDownloadListener extends DownloadListener
     private Semaphore done = new Semaphore(0);
     private boolean caughtUp = false;
 
-    @Override
     public void onChainDownloadStarted(Peer peer, int blocksLeft) {
         Log.d(TAG, String.format("onChainDownloadStarted | peer: %s, blocksLeft: %s", peer.toString(), blocksLeft));
         startDownload(blocksLeft);
@@ -32,8 +31,9 @@ public class MyDownloadListener extends DownloadListener
         }
     }
 
-    @Override
     public void onBlocksDownloaded(Peer peer, Block block, int blocksLeft) {
+        Log.d(TAG, "blocksLeft: " + blocksLeft);
+
         if (caughtUp)
             return;
 
@@ -70,6 +70,7 @@ public class MyDownloadListener extends DownloadListener
      * @param blocks the number of blocks to download, estimated
      */
     protected void startDownload(int blocks) {
+        Log.d(TAG, "startDownload, blocks remaining: " + blocks);
         if (blocks > 0)
             Log.d(TAG, "Downloading block chain of size " + blocks + ". " +
                     (blocks > 1000 ? "This may take a while." : ""));
@@ -79,17 +80,16 @@ public class MyDownloadListener extends DownloadListener
      * Called when we are done downloading the block chain.
      */
     protected void doneDownload() {
+        Log.d(TAG, "doneDownload()");
     }
 
     /**
      * Wait for the chain to be downloaded.
      */
     public void await() throws InterruptedException {
+        Log.d(TAG, "await()");
         done.acquire();
     }
-
-
-
 
 
 }

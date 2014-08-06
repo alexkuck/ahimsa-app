@@ -63,4 +63,10 @@ public class Utils {
 
     }
 
+    // angles of ahimsa:
+    // help change the public perception of bitcoin
+    // target specific countries
+    // anonymous fund, donate to pool for people to post freely from
+    // awareness: twitter vs ahimsa
+
 }

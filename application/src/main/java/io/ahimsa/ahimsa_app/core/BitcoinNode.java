@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.google.bitcoin.core.AbstractBlockChain;
 import com.google.bitcoin.core.Block;
+import com.google.bitcoin.core.Peer;
 import com.google.bitcoin.core.PeerGroup;
 import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.core.Transaction;
@@ -15,6 +16,7 @@ import com.google.bitcoin.net.discovery.DnsDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscoveryException;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Service;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -73,20 +75,24 @@ public class BitcoinNode
 
             final boolean hasTrustedPeer = !config.getTrustedPeer().isEmpty();
             peerGroup.setMaxConnections(hasTrustedPeer ? 1 : config.getMaxConnectedPeers());
-            peerGroup.addPeerDiscovery(new PeerDiscovery() {
+            peerGroup.addPeerDiscovery(new PeerDiscovery()
+            {
                 private final PeerDiscovery normalPeerDiscovery = new DnsDiscovery(Constants.NETWORK_PARAMETERS);
 
                 @Override
-                public InetSocketAddress[] getPeers(final long timeoutValue, final TimeUnit timeoutUnit) throws PeerDiscoveryException {
+                public InetSocketAddress[] getPeers(final long timeoutValue, final TimeUnit timeoutUnit) throws PeerDiscoveryException
+                {
                     final List<InetSocketAddress> peers = new LinkedList<InetSocketAddress>();
 
                     boolean needsTrimPeersWorkaround = false;
 
-                    if (hasTrustedPeer) {
+                    if (hasTrustedPeer)
+                    {
                         Log.d(TAG, "trusted peer '" + config.getTrustedPeer() + "'" + (hasTrustedPeer ? " only" : ""));
 
                         final InetSocketAddress addr = new InetSocketAddress(config.getTrustedPeer(), Constants.NETWORK_PARAMETERS.getPort());
-                        if (addr.getAddress() != null) {
+                        if (addr.getAddress() != null)
+                        {
                             peers.add(addr);
                             needsTrimPeersWorkaround = true;
                         }
@@ -104,13 +110,17 @@ public class BitcoinNode
                 }
 
                 @Override
-                public void shutdown() {
+                public void shutdown()
+                {
                     normalPeerDiscovery.shutdown();
                 }
             });
 
-            peerGroup.startAndWait();
-            peerGroup.waitForPeers( config.getMinConnectedPeers()).get(config.getTimeout(), TimeUnit.SECONDS );
+            ListenableFuture<Service.State> future = peerGroup.start();
+            future.get(config.getTimeout(), TimeUnit.SECONDS);
+
+//            ListenableFuture<PeerGroup> future2 = peerGroup.waitForPeers(config.getMinConnectedPeers());
+//            future2.get(config.getTimeout(), TimeUnit.SECONDS);
 
             Log.d(TAG, "pending peers  : " + peerGroup.getPendingPeers());
             Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());
@@ -136,6 +146,14 @@ public class BitcoinNode
         }
     }
 
+    public void waitForPeers() throws Exception
+    {
+        ListenableFuture<PeerGroup> future2 = peerGroup.waitForPeers(config.getMinConnectedPeers());
+        future2.get(config.getTimeout(), TimeUnit.SECONDS);
+
+        Log.d(TAG, "pending peers  : " + peerGroup.getPendingPeers());
+        Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());
+    }
 
     // Public actions on PeerGroup ----------------------------------------------------------
     public Long broadcastTx(Transaction tx) throws Exception
@@ -144,6 +162,8 @@ public class BitcoinNode
 
         if (peerGroup != null)
         {
+            waitForPeers();
+
             Long highest_block = getNetworkHeight();
             ListenableFuture<Transaction> future = peerGroup.broadcastTransaction(new Transaction(Constants.NETWORK_PARAMETERS, tx.bitcoinSerialize()));
             future.get(config.getTimeout(), TimeUnit.SECONDS);
@@ -163,6 +183,7 @@ public class BitcoinNode
     {
         if (peerGroup != null)
         {
+            waitForPeers();
             Long peer_best = new Long( peerGroup.getMostCommonChainHeight() );
 //            Long peer_best = new Long(peerGroup.getDownloadPeer().getBestHeight());
 
@@ -179,7 +200,18 @@ public class BitcoinNode
         if(peerGroup != null)
         {
 //            peerGroup.downloadBlockChain();
-            peerGroup.startBlockChainDownload(new MyDownloadListener());
+//            peerGroup.startBlockChainDownload(new MyDownloadListener());
+
+            waitForPeers();
+
+            MyDownloadListener listener = new MyDownloadListener();
+            peerGroup.startBlockChainDownload(listener);
+            try {
+                listener.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
         }
         else
         {
@@ -191,7 +223,8 @@ public class BitcoinNode
     {
         if(peerGroup != null)
         {
-            return peerGroup.getDownloadPeer().getBlock(hash).get();
+            waitForPeers();
+            return peerGroup. getDownloadPeer().getBlock(hash).get();
         }
         else
         {
