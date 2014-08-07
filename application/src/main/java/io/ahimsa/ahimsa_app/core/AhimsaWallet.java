@@ -172,10 +172,10 @@ public class AhimsaWallet {
     // Actions -------------------------------------------------------------------------------------
     public void verifyKeyStore()
     {
-        if(keyStore.getKeys().isEmpty())
+        if(keyStore.getImportedKeys().isEmpty())
         {
             ECKey key = new ECKey();
-            keyStore.addKey(key);
+            keyStore.importKey(key);
             config.setDefaultAddress( key.toAddress(Constants.NETWORK_PARAMETERS).toString() );
             saveKeyStore();
         }
@@ -186,7 +186,7 @@ public class AhimsaWallet {
         //reset config, database, and keyStore.
         config.reset();
         db.reset();
-        for(ECKey key : keyStore.getKeys())
+        for(ECKey key : keyStore.getImportedKeys())
         {
             keyStore.removeKey(key);
         }

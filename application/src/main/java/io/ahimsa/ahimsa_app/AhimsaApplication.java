@@ -22,7 +22,6 @@ import java.io.InputStream;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.core.AhimsaWallet;
 import io.ahimsa.ahimsa_app.core.AhimsaDB;
-import io.ahimsa.ahimsa_app.fund.FundService;
 
 /**
  * Created by askuck on 7/11/14.

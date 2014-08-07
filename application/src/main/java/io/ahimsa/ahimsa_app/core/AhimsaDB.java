@@ -8,10 +8,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.bitcoin.core.Coin;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutput;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -234,10 +234,10 @@ public class AhimsaDB {
     public List<TransactionOutput> getUnspentOutputs(Long min_coin_necessary){
         //get unspent transactions sorted in descending order
         List<TransactionOutput> db_unspent = getAllUnspentOutputs();
-        BigInteger min = BigInteger.valueOf(min_coin_necessary);
+        Coin min = Coin.valueOf( min_coin_necessary );
 
         ArrayList<TransactionOutput> unspents = new ArrayList<TransactionOutput>();
-        BigInteger bal = BigInteger.ZERO;
+        Coin bal = Coin.ZERO;
 
         for(TransactionOutput out : db_unspent){
             if(bal.compareTo(min) >= 0)
@@ -287,16 +287,16 @@ public class AhimsaDB {
         return new Long(0);
     }
 
-    public BigInteger getUnconfirmedBalance(){
+    public Long getUnconfirmedBalance(){
         String SUM = String.format("SELECT SUM(txouts.value) FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                 "WHERE (txouts.status == 'unspent' OR txouts.status == 'pending') AND transactions.confirmed == 0;");
 
         Cursor cursor = db.rawQuery(SUM, null);
         if (cursor.moveToFirst()) {
-            return BigInteger.valueOf((long) cursor.getInt(0));
+            return new Long(cursor.getInt(0));
         }
 
-        return BigInteger.ZERO;
+        return new Long(0);
     }
 
     //----------------------------------------------------------------------------------------------

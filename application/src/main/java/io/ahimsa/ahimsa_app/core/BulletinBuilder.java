@@ -1,25 +1,22 @@
 package io.ahimsa.ahimsa_app.core;
 
-
 import android.util.Log;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.bitcoin.core.Coin;
 import com.google.bitcoin.core.Wallet;
-
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutPoint;
 import com.google.bitcoin.core.TransactionInput;
 import com.google.bitcoin.core.TransactionOutput;
-
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.Transaction.SigHash;
 
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
-
 import io.ahimsa.ahimsa_app.core.WireBulletinProtos.WireBulletin;
 
 
@@ -99,7 +96,7 @@ public class BulletinBuilder
             if( (i+1) % Constants.CHAR_PER_OUT == 0 )
             {
                 Address addr = new Address(Constants.NETWORK_PARAMETERS, slice);
-                tx.addOutput(new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, BigInteger.valueOf(Constants.MIN_DUST), addr));
+                tx.addOutput(new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, Coin.valueOf(Constants.MIN_DUST), addr));
             }
         }
         Log.d("BB", tx.toString());
@@ -108,11 +105,11 @@ public class BulletinBuilder
 
     private static void addChangeOutput(Wallet keyStore, Transaction tx, List<TransactionOutput> unspents) throws Exception
     {
-        BigInteger fee      = BigInteger.valueOf(Constants.MIN_FEE);
-        BigInteger in_coin  = totalInCoin(unspents);
-        BigInteger out_coin = totalOutCoin(tx);
+        Coin fee        = Coin.valueOf(Constants.MIN_FEE);
+        Coin in_coin    = totalInCoin(unspents);
+        Coin out_coin   = totalOutCoin(tx);
 
-        BigInteger total = BigInteger.ZERO.add(in_coin).subtract(out_coin).subtract(fee);
+        Coin total = Coin.ZERO.add(in_coin).subtract(out_coin).subtract(fee);
 
         String TAG = "BulletinBuilder";
         Log.d(TAG, "fee |" + fee.toString());
@@ -121,7 +118,7 @@ public class BulletinBuilder
         Log.d(TAG, "total |" + total.toString());
 
 
-        switch ( total.compareTo(BigInteger.ZERO) )
+        switch ( total.compareTo(Coin.ZERO) )
         {
             case  0:
             case  1:    break;
@@ -129,10 +126,10 @@ public class BulletinBuilder
                 throw new Exception("out_coin + fee exceeds in_coin | " + total.toString());
         }
 
-        BigInteger min = BigInteger.valueOf(Constants.getMinCoinNecessary());
+        Coin min = Coin.valueOf( Constants.getMinCoinNecessary() );
 //        Address default_addr = new Address(Constants.NETWORK_PARAMETERS, default_addr);
         Address default_addr = keyStore.getChangeAddress();
-        while(total.compareTo(BigInteger.ZERO) == 1)
+        while(total.compareTo(Coin.ZERO) == 1)
         {
             if(total.compareTo(min) > 0)
             {
@@ -147,9 +144,9 @@ public class BulletinBuilder
         }
     }
 
-    private static BigInteger totalInCoin(List<TransactionOutput> db_unspent)
+    private static Coin totalInCoin(List<TransactionOutput> db_unspent)
     {
-        BigInteger in_coin = BigInteger.ZERO;
+        Coin in_coin = Coin.ZERO;
         for(TransactionOutput out : db_unspent)
         {
             in_coin = in_coin.add(out.getValue());
@@ -157,9 +154,9 @@ public class BulletinBuilder
         return in_coin;
     }
 
-    private static BigInteger totalOutCoin(Transaction tx)
+    private static Coin totalOutCoin(Transaction tx)
     {
-        BigInteger out_coin = BigInteger.ZERO;
+        Coin out_coin = Coin.ZERO;
         for(TransactionOutput out : tx.getOutputs())
         {
             out_coin = out_coin.add(out.getValue());

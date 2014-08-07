@@ -1,6 +1,5 @@
 package io.ahimsa.ahimsa_app.core;
 
-
 import com.google.bitcoin.core.DumpedPrivateKey;
 import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.Transaction;
@@ -44,14 +43,14 @@ public class Utils {
     }
 
     //----------------------------------------------------------------------------------------------
-    public static BigInteger satoshiToSelf(Transaction tx, Long in_coin, Long _fee)
-    {
-        BigInteger in  = BigInteger.valueOf(in_coin);
-        BigInteger out = tx.getOutput(0).getValue();
-        BigInteger fee = BigInteger.valueOf(_fee);
-
-        return in.subtract(out).subtract(fee);
-    }
+//    public static BigInteger satoshiToSelf(Transaction tx, Long in_coin, Long _fee)
+//    {
+//        BigInteger in  = BigInteger.valueOf(in_coin);
+//        BigInteger out = tx.getOutput(0).getValue();
+//        BigInteger fee = BigInteger.valueOf(_fee);
+//
+//        return in.subtract(out).subtract(fee);
+//    }
 
     public static ECKey importKey(String privkey) throws Exception {
         //only accepts a very specific type of address. from dumpprivkey functionality in Bitcoin core.

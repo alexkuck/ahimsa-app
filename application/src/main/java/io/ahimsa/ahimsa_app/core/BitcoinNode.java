@@ -116,8 +116,7 @@ public class BitcoinNode
                 }
             });
 
-            ListenableFuture<Service.State> future = peerGroup.start();
-            future.get(config.getTimeout(), TimeUnit.SECONDS);
+            peerGroup.startAsync();
 
 //            ListenableFuture<PeerGroup> future2 = peerGroup.waitForPeers(config.getMinConnectedPeers());
 //            future2.get(config.getTimeout(), TimeUnit.SECONDS);
@@ -135,7 +134,7 @@ public class BitcoinNode
     {
         if (peerGroup != null)
         {
-            peerGroup.stopAndWait();
+            peerGroup.stopAsync();
             Log.d(TAG, "peergroup stopped");
         }
 
@@ -148,8 +147,8 @@ public class BitcoinNode
 
     public void waitForPeers() throws Exception
     {
-        ListenableFuture<PeerGroup> future2 = peerGroup.waitForPeers(config.getMinConnectedPeers());
-        future2.get(config.getTimeout(), TimeUnit.SECONDS);
+        peerGroup.awaitRunning();
+        peerGroup.waitForPeers(config.getMinConnectedPeers()).get(config.getTimeout(), TimeUnit.SECONDS);
 
         Log.d(TAG, "pending peers  : " + peerGroup.getPendingPeers());
         Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());

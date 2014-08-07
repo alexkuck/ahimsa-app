@@ -2,3 +2,6 @@
 /local.properties
 /.idea/workspace.xml
 .DS_Store
+application/application.apk
+application/libs/
+application/src/main/res/raw/cert.pem
