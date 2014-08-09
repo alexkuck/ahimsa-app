@@ -195,7 +195,7 @@ public class AhimsaActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-//            AhimsaService.startResetAhimsaWallet(this);
+            AhimsaService.startResetAhimsaWallet(this);
             AhimsaService.startSyncBlockChain(this);
             return true;
         } else if (id == R.id.action_create_bulletin) {

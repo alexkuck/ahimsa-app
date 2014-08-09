@@ -32,13 +32,6 @@ public class MyDownloadListener extends AbstractPeerEventListener
     }
 
     public void onBlocksDownloaded(Peer peer, Block block, int blocksLeft) {
-        if(blocksLeft > 25){
-            if(blocksLeft % 100 == 0)
-                Log.d(TAG, "blocksLeft: " + blocksLeft);
-        } else {
-            Log.d(TAG, "blocksLeft: " + blocksLeft);
-        }
-
         if (caughtUp)
             return;
 

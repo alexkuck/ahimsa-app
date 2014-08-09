@@ -63,6 +63,7 @@ public class AhimsaWallet {
 
     public void removeAllReservations()
     {
+        Log.d(TAG, "*** REMOVED ALL RESERVATIONS ****");
         db.removeAllReservations();
     }
 
@@ -107,6 +108,8 @@ public class AhimsaWallet {
             // Add all relevant future outpoints to ahimsaDB.
             for(TransactionOutput out : tx.getOutputs())
             {
+                Log.d(TAG, "commitTransaction() | " + out.toString());
+                Log.d(TAG, "out.isMine(): " + out.isMine(keyStore));
                 if(out.isMine(keyStore))
                 {
                     db.addTxOut(out);
@@ -119,6 +122,9 @@ public class AhimsaWallet {
             {
                 String previous_txid = in.getOutpoint().getHash().toString();
                 Long previous_vout = in.getOutpoint().getIndex();
+
+                Log.d(TAG, "tx_in previous_txid | " + previous_txid);
+                Log.d(TAG, "tx_in previous_vout | " + previous_vout);
 
                 if( db.setStatusSpent(previous_txid, previous_vout) )
                 {

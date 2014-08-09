@@ -556,7 +556,8 @@
         android:paddingBottom="5dip"
         android:text="mpRZxxp5FtmQipEWJPa1NY9FmPsva3exUd"
         android:layout_below="@+id/device_address"
-        android:layout_toRightOf="@+id/qr_value"/>
+        android:layout_toRightOf="@+id/qr_value"
+        android:textIsSelectable="true"/>
 
     <View
         android:layout_width="wrap_content"
