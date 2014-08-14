@@ -1,6 +1,11 @@
 package io.ahimsa.ahimsa_app;
 
 import android.content.SharedPreferences;
+import android.util.Base64;
+
+import com.google.bitcoin.core.ECKey;
+
+import java.math.BigInteger;
 
 import javax.annotation.Nonnull;
 
@@ -8,6 +13,10 @@ import javax.annotation.Nonnull;
  * Created by askuck on 7/11/14.
  */
 public class Configuration {
+
+    public static final String PREF_KEY_PRIVKEY_STRING = "private_key";
+    public static final String PREF_KEY_PUBPOINT_STRING = "pubkey_point";
+    public static final String PREF_KEY_KEY_CREATION_TIME_LONG = "key_creation_time";
 
     public static final String PREF_KEY_SYNC_AT_START = "sync_blockchain_at_startup";
     public static final String PREF_KEY_TEMP_CONF_BALANCE = "temp_conf_balance";
@@ -28,36 +37,64 @@ public class Configuration {
         this.prefs = prefs;
     }
 
+    public void setDefaultECKey(ECKey key)
+    {
+        // NOTE: this method of storage is temporary and is for demo purposes only.
+        // We are attending a conference and want something functional to show.
+        // Saving a BasicKeyChain to file is the next implementation step.
+        // ahimsa-app version-not-proof-of-concept-and-not-experimental-playground will have a Wallet.
+        // ...as this app used to have but slow low times have caused us to venture away.
+
+        byte[] privkey_raw = key.getPrivKey().toByteArray();
+        byte[] pubpoint_raw = key.getPubKeyPoint().getEncoded();
+
+        String privkey_str = Base64.encodeToString(privkey_raw, Base64.DEFAULT);
+        String pubpoint_str = Base64.encodeToString(pubpoint_raw, Base64.DEFAULT);
+
+        prefs.edit().putString(PREF_KEY_PRIVKEY_STRING, privkey_str).commit();
+        prefs.edit().putString(PREF_KEY_PUBPOINT_STRING, pubpoint_str).commit();
+        prefs.edit().putLong(PREF_KEY_KEY_CREATION_TIME_LONG, key.getCreationTimeSeconds()).commit();
+
+    }
+
+    public ECKey getDefaultECKey()
+    {
+        String privkey_str  = prefs.getString(PREF_KEY_PRIVKEY_STRING, null);
+        String pubpoint_str = prefs.getString(PREF_KEY_PUBPOINT_STRING, null);
+
+        if(privkey_str == null || pubpoint_str == null)
+        {
+            ECKey my_awesome_key = new ECKey();
+            setDefaultECKey(my_awesome_key);
+
+            return my_awesome_key;
+        }
+        else
+        {
+            byte[] privkey_raw  = Base64.decode(privkey_str, Base64.DEFAULT);
+            byte[] pubpoint_raw  = Base64.decode(pubpoint_str, Base64.DEFAULT);
+
+            return ECKey.fromPrivateAndPrecalculatedPublic(privkey_raw, pubpoint_raw);
+        }
+    }
+
+    public Long getEarliestKeyCreationTime()
+    {
+        return prefs.getLong(PREF_KEY_KEY_CREATION_TIME_LONG, 0);
+    }
 
     // AhimsaApplication ---------------------------------------------------------------------------
-    public boolean  syncBlockChainAtStartup(){
+    public boolean syncBlockChainAtStartup()
+    {
         return prefs.getBoolean(PREF_KEY_SYNC_AT_START, false);
     }
-    public void     setSyncBlockChainAtStartup(boolean x){
+
+    public void setSyncBlockChainAtStartup(boolean x)
+    {
         prefs.edit().putBoolean(PREF_KEY_SYNC_AT_START, x).commit();
     }
 
-
-    // AhimsaWallet --------------------------------------------------------------------------------
-//    public Long     getTempConfBalance() {
-//        return prefs.getLong(PREF_KEY_TEMP_CONF_BALANCE, 0);
-//    }
-//    public void setTempConfBalance(Long x) {
-//        prefs.edit().putLong(PREF_KEY_TEMP_CONF_BALANCE, x).commit();
-//    }
-
-
     // Funding -------------------------------------------------------------------------------------
-    public boolean  getIsFunded(){
-        return prefs.getBoolean(PREF_KEY_IS_FUNDED, false);
-    }
-    public void     setIsFunded(Boolean x){
-        prefs.edit().putBoolean(PREF_KEY_IS_FUNDED, x).commit();
-    }
-
-    public String   getFundingTxid(){ return prefs.getString(PREF_FUND_TXID, "");}
-    public void     setFundingTxid(String txid){ prefs.edit().putString(PREF_FUND_TXID, txid).commit();}
-
     public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, Constants.ROBINHOOD_FUND);}
     public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x);}
 
@@ -93,16 +130,6 @@ public class Configuration {
     public void     setHighestBlockSeen(long height) {
         prefs.edit().putLong(PREF_KEY_HIGHEST_BLOCK_SEEN, height).commit();
     }
-
-
-    // BulletinBuilder -----------------------------------------------------------------------------
-    public String   getDefaultAddress(){
-        return prefs.getString(PREF_KEY_DEFAULT_ADDRESS, "");
-    }
-    public void     setDefaultAddress(String addr) {
-        prefs.edit().putString(PREF_KEY_DEFAULT_ADDRESS, addr).commit();
-    }
-
 
     // Utility--------------------------------------------------------------------------------------
     public void     reset() {

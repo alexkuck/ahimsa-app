@@ -12,19 +12,17 @@ import com.google.bitcoin.core.Block;
 import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.core.StoredBlock;
 import com.google.bitcoin.core.Transaction;
-import com.google.bitcoin.core.TransactionOutput;
-import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.store.BlockStore;
 import com.google.bitcoin.store.BlockStoreException;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
+import io.ahimsa.ahimsa_app.R;
 
 public class AhimsaService extends IntentService
 {
@@ -45,9 +43,12 @@ public class AhimsaService extends IntentService
     private static final String EXTRA_STRING_TXID           = AhimsaService.class.getPackage().getName() + ".txid";
 
     private AhimsaApplication application;
-    private AhimsaWallet ahimwall;
-    private BitcoinNode node;
     private Configuration config;
+    private AhimsaWallet ahimwall;
+    private AhimsaLog ahimlog;
+    private BitcoinNode node;
+
+
     private String TAG = "AhismaService";
 
     public static void startNetworkTest(Context context)
@@ -114,20 +115,12 @@ public class AhimsaService extends IntentService
     //----------------------------------------------------------------------------------------------
     public void onCreate()
     {
+        Log.d(TAG, "onCreate");
         application = (AhimsaApplication) getApplication();
-        ahimwall = application.getAhimsaWallet();
-        config = application.getConfig();
-        node = new BitcoinNode(this, application);
-
-        try
-        {
-            node.startPeerGroup(application.getBlockChain());
-        }
-        catch (Exception e)
-        {
-            // no internet connection exists
-            e.printStackTrace();
-        }
+        config      = application.getConfig();
+        ahimwall    = application.getAhimsaWallet();
+        ahimlog     = application.getAhimsaLog();
+        node        = new BitcoinNode(this, application);
 
         super.onCreate();
     }
@@ -135,18 +128,48 @@ public class AhimsaService extends IntentService
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-        if( ACTION_BROADCAST_BULLETIN.equals(intent.getAction()) )
+        Log.d(TAG, "onStartCommand");
+        if(intent != null)
         {
-//            todo | think this through; decide on best implementation.
-//            final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
-//            final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
-//            final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
-//            ahimwall.reserveTxOuts(topic, message, fee);
+            final String action = intent.getAction();
+            if (ACTION_NETWORK_TEST.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.network_test) );
+            }
+            else if (ACTION_RESET_AHIMSA_WALLET.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.reset_ahimwall) );
+            }
+            else if (ACTION_BROADCAST_BULLETIN.equals(action))
+            {
+                // final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
+                // final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
+                // final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
+                // ahimwall.reserveTxOuts(topic, message, fee);
 
-            ahimwall.reserveTxOuts();
-            broadcastUpdateIntent();
+                ahimlog.pushQueue( getString(R.string.broadcast_bulletin) );
+                ahimwall.reserveTxOuts();
+                updatedOverview();
+            }
+            else if (ACTION_BROADCAST_TX.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.broadcast_tx) );
+            }
+            else if (ACTION_SYNC_BLOCK_CHAIN.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.sync_block_chain) );
+            }
+            else if (ACTION_IMPORT_BLOCK.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.import_block) );
+            }
+            else if (ACTION_CONFIRM_TX.equals(action))
+            {
+                ahimlog.pushQueue( getString(R.string.confirm_tx) );
+            }
         }
 
+        updatedQueue();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -165,8 +188,21 @@ public class AhimsaService extends IntentService
     {
         if(intent != null)
         {
-            Log.d(TAG, "Commencing AhimsaService, action | " + intent.getAction());
             final String action = intent.getAction();
+            Log.d(TAG, "Commencing AhimsaService, action | " + action);
+
+            if(!node.isRunning())
+            {
+                try
+                {
+                    node.startPeerGroup();
+                }
+                catch (Exception e)
+                {
+                    // no internet connection exists
+                    e.printStackTrace();
+                }
+            }
 
             if(ACTION_NETWORK_TEST.equals(action))
             {
@@ -205,18 +241,42 @@ public class AhimsaService extends IntentService
             }
 
             //todo: certain updates for certain actions
-            broadcastUpdateIntent();
+            updatedOverview();
 
             Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
         }
     }
     //----------------------------------------------------------------------------------------------
-    private void broadcastUpdateIntent()
+    private void updatedOverview()
     {
         Intent update_intent = new Intent();
-        update_intent.setAction(Constants.ACTION_AHIMWALL_UPDATE);
+        update_intent.setAction(Constants.ACTION_UPDATED_OVERVIEW);
         LocalBroadcastManager.getInstance(this).sendBroadcast(update_intent);
     }
+
+    //todo implement these
+    private void updatedQueue()
+    {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_UPDATED_QUEUE);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void updatedLog()
+    {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_UPDATED_LOG);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void updatedBulletin()
+    {
+        Intent intent = new Intent();
+        intent.setAction(Constants.ACTION_UPDATED_BULLETIN);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+
     //----------------------------------------------------------------------------------------------
     private void handleNetworkTest()
     {
@@ -239,8 +299,8 @@ public class AhimsaService extends IntentService
     {
         // todo | implement.
         // Reset then re-initialization config, database, and keyStore.
-        //ahimwall.reset();
-
+        ahimwall.toLog();
+        ahimwall.resetDB();
         ahimwall.toLog();
     }
 
@@ -252,6 +312,8 @@ public class AhimsaService extends IntentService
         try
         {
             bulletin = ahimwall.createAndAddBulletin(topic, message, fee);
+            ahimwall.toLog();
+            Log.d(TAG, bulletin.toString());
         }
         catch (Exception e)
         {
@@ -504,25 +566,12 @@ public class AhimsaService extends IntentService
         for( Transaction tx : block.getTransactions() )
         {
             Log.d(TAG, tx.getHashAsString());
-            if( isMyTx(tx, ahimwall.getKeyStore()) )
+            if( ahimwall.isRelevant(tx) )
             {
                 foundTxs.add(tx);
             }
         }
         return foundTxs;
-    }
-
-    public boolean isMyTx(Transaction tx, Wallet wallet)
-    {
-        // Determine if a transaction is relevant to a wallet's keys.
-        for(TransactionOutput txOut : tx.getOutputs())
-        {
-            if(txOut.isMine(wallet))
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
 }

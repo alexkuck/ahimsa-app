@@ -5,23 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.ScriptException;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionInput;
 import com.google.bitcoin.core.TransactionOutput;
-import com.google.bitcoin.core.Wallet;
-import com.google.bitcoin.store.UnreadableWalletException;
-import com.google.bitcoin.store.WalletProtobufSerializer;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.ArrayList;
+import com.google.bitcoin.script.Script;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
@@ -32,22 +22,18 @@ import io.ahimsa.ahimsa_app.Constants;
 public class AhimsaWallet {
     private String TAG = "AhimsaWallet";
 
-    private File keyStoreFile;
-    private Wallet keyStore;
-    private AhimsaDB db;
     private Configuration config;
+    private AhimsaDB db;
+    private ECKey key;
 
-    public AhimsaWallet(File keyStoreFile, AhimsaDB db, Configuration config)
+    public AhimsaWallet(Configuration config, AhimsaDB db)
     {
-        this.keyStoreFile = keyStoreFile;
-        this.db = db;
         this.config = config;
-        loadWalletFromProtobuf();
-
-        verifyKeyStore();
+        this.db = db;
+        this.key = config.getDefaultECKey();
     }
 
-    // public utilities-----------------------------------------------------------------------------
+    // Reservations --------------------------------------------------------------------------------
     public void reserveTxOuts()
     {
         // implement cost_estimation instead of flat max rate?
@@ -67,6 +53,7 @@ public class AhimsaWallet {
         db.removeAllReservations();
     }
 
+    // Wallet Actions ------------------------------------------------------------------------------
     public Transaction createAndAddBulletin(String topic, String message, Long fee) throws Exception
     {
         if(topic == null || topic.equals("") )
@@ -86,7 +73,7 @@ public class AhimsaWallet {
 
         // Create a bulletin using system's configuration file, a bitcoinj wallet, the unspent
         // txouts gathered, and the topic and message.
-        Transaction bulletin = BulletinBuilder.createTx(keyStore, unspents, topic, message);
+        Transaction bulletin = BulletinBuilder.createTx(key, unspents, topic, message);
 
         // Add this bulletin to the bulletin table
         // todo | atomicity (include with commit of transaction)
@@ -106,14 +93,17 @@ public class AhimsaWallet {
             db.addTx(tx, confirmed, highest_block);
 
             // Add all relevant future outpoints to ahimsaDB.
+            int vout = 0;
             for(TransactionOutput out : tx.getOutputs())
             {
                 Log.d(TAG, "commitTransaction() | " + out.toString());
-                Log.d(TAG, "out.isMine(): " + out.isMine(keyStore));
-                if(out.isMine(keyStore))
+                Log.d(TAG, "isRelevant(): " + isRelevant(out));
+                if(isRelevant(out))
                 {
-                    db.addTxOut(out);
+                    Log.d(TAG, "txout(): " + out.toString());
+                    db.addTxOut(out, vout);
                 }
+                vout++;
             }
 
             // Flag funding outs as spent.
@@ -141,22 +131,9 @@ public class AhimsaWallet {
         }
     }
 
-    public void confirmTx(Transaction tx, Long height)
-    {
-        // This function informs the database that one of the wallet's transaction has been included
-        // in the block chain below a target depth.
-
-        confirmTx(tx.getHashAsString(), height);
-    }
-
     public void confirmTx(String txid, Long height)
     {
         db.confirmTx(txid, height);
-    }
-
-    public void dropTx(Transaction tx, Long height)
-    {
-        dropTx(tx.getHashAsString(), height);
     }
 
     public void dropTx(String txid, Long height)
@@ -165,44 +142,56 @@ public class AhimsaWallet {
         Log.d(TAG, String.format("Tx was dropped at height %s | %s", height.toString(), txid));
     }
 
-    public void setHighestBlock(Transaction tx, Long height)
-    {
-        db.setHighestBlock(tx.getHashAsString(), height);
-    }
-
     public void setHighestBlock(String txid, Long height)
     {
         db.setHighestBlock(txid, height);
     }
 
-    // Actions -------------------------------------------------------------------------------------
-    public void verifyKeyStore()
+    // Is it relevant? -----------------------------------------------------------------------------
+    public boolean isRelevant(TransactionOutput out)
     {
-        if(keyStore.getImportedKeys().isEmpty())
+        try {
+            Script script = out.getScriptPubKey();
+            if (script.isSentToRawPubKey())
+            {
+                return Arrays.equals(key.getPubKey(), script.getPubKey());
+            }
+            if (script.isPayToScriptHash())
+            {
+//                return wallet.isPayToScriptHashMine(script.getPubKeyHash());
+                return false; // unsupported. todo: support
+            }
+            else
+            {
+                return Arrays.equals(key.getPubKeyHash(), script.getPubKeyHash());
+            }
+        }
+        catch (ScriptException e)
         {
-            ECKey key = new ECKey();
-            keyStore.importKey(key);
-            config.setDefaultAddress( key.toAddress(Constants.NETWORK_PARAMETERS).toString() );
-            saveKeyStore();
+            // Just means we didn't understand the output of this transaction: ignore it.
+            Log.e(TAG, "Could not parse tx output script: {}", e);
+            return false;
         }
     }
 
-    public void reset()
+    public boolean isRelevant(Transaction tx)
     {
-        //reset config, database, and keyStore.
-        config.reset();
-        db.reset();
-        for(ECKey key : keyStore.getImportedKeys())
-        {
-            keyStore.removeKey(key);
-        }
-        verifyKeyStore();
+        for(TransactionOutput out : tx.getOutputs())
+            if(isRelevant(out))
+                return true;
+
+        return false;
     }
 
-    // Getters--------------------------------------------------------------------------------------
-    public Wallet getKeyStore()
+    // Getters -------------------------------------------------------------------------------------
+    public ECKey getKey()
     {
-        return keyStore;
+        return key;
+    }
+
+    public Long getEarliestKeyCreationTime()
+    {
+        return config.getEarliestKeyCreationTime();
     }
 
     public Long getConfirmedBalance(boolean only_pending)
@@ -239,6 +228,7 @@ public class AhimsaWallet {
     public Bundle getUpdateBundle() {
         Bundle update_bundle = new Bundle();
 
+        update_bundle.putString(Constants.EXTRA_STRING_ADDRESS, key.toAddress(Constants.NETWORK_PARAMETERS).toString());
         update_bundle.putInt(Constants.EXTRA_INT_CONF, db.getConfirmedTxs(true).getCount());
         update_bundle.putInt(Constants.EXTRA_INT_UNCONF, db.getUnconfirmedTxs(true).getCount());
 //        update_bundle.putInt(Constants.EXTRA_INT_DRAFT, db.getDraftTx().getCount());
@@ -258,89 +248,18 @@ public class AhimsaWallet {
         return db.getBulletinCursor();
     }
 
-
-
-    // Load/Save -----------------------------------------------------------------------------------
-    private void saveKeyStore()
-    {
-        try {
-            protobufSerializeWallet(keyStore);
-        }
-        catch (final IOException x){
-            throw new RuntimeException(x);
-        }
-    }
-
-    private void loadWalletFromProtobuf()
-    {
-        if(keyStoreFile.exists())
-        {
-            final long start = System.currentTimeMillis();
-            FileInputStream walletStream = null;
-
-            try
-            {
-                walletStream = new FileInputStream(keyStoreFile);
-                keyStore = new WalletProtobufSerializer().readWallet(walletStream);
-
-                Log.d(TAG, "wallet loaded from: '" + keyStoreFile + "', took " + (System.currentTimeMillis() - start) + "ms");
-            }
-            catch (final FileNotFoundException x)
-            {
-                Log.e(TAG, "problem loading wallet", x);
-                //Toast.makeText(AhimsaApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-                //wallet = restoreWalletFromBackup();
-            }
-            catch (final UnreadableWalletException x)
-            {
-                Log.e(TAG, "problem loading wallet", x);
-                //Toast.makeText(AhimsaApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-                //wallet = restoreWalletFromBackup();
-            }
-            finally
-            {
-                if (walletStream != null)
-                {
-                    try
-                    {
-                        walletStream.close();
-                    }
-                    catch (final IOException x)
-                    {
-                        // swallow
-                    }
-                }
-            }
-
-            if (!keyStore.isConsistent())
-            {
-                Log.d(TAG, "problem loading wallet");
-                //Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
-                //wallet = restoreWalletFromBackup();
-            }
-
-            if (!keyStore.getParams().equals(Constants.NETWORK_PARAMETERS))
-                throw new Error("bad wallet network parameters: " + keyStore.getParams().getId());
-        }
-        else
-        {
-            keyStore = new Wallet(Constants.NETWORK_PARAMETERS);
-        }
-    }
-
-    private void protobufSerializeWallet(@Nonnull final Wallet wallet) throws IOException
-    {
-        final long start = System.currentTimeMillis();
-
-        wallet.saveToFile(keyStoreFile);
-
-        Log.d(TAG, "wallet saved to: '" + keyStoreFile + "', took " + (System.currentTimeMillis() - start) + "ms");
-    }
-
-
-
     //----------------------------------------------------------------------------------------------
+    public void resetDB()
+    {
+        db.reset();
+    }
+
     public void toLog(){
+
+        Log.d(TAG, "========================");
+        db.getBulletinCursor();
+        Log.d(TAG, "========================");
+
         String ahimwall_to_string = toString();
 
         int sections = ahimwall_to_string.length() / 4000;
@@ -358,22 +277,16 @@ public class AhimsaWallet {
     @Override
     public String toString()
     {
-        Log.d(TAG, "========================");
-        db.getBulletinCursor();
-        Log.d(TAG, "========================");
+        StringBuilder buf = new StringBuilder("\n" +"--------------------AhimsaWallet--------------------\n");
+        buf.append("private key: " + key.getPrivKey().toString() + "\n");
+        buf.append("public key: " + key.toAddress(Constants.NETWORK_PARAMETERS) + "\n");
+        buf.append("earliestKeyCreationTime(): " + getEarliestKeyCreationTime() + "\n");
+        buf.append("----------------------Database----------------------\n");
+        buf.append(db.toString() + "\n");
+        buf.append("----------------------------------------------------\n");
+        buf.append("DB_BALANCE: " + db.getConfirmedBalance(true).toString() + "\n");
 
-        String  a  =  "\n--------------------AhimsaWallet--------------------\n";
-        a +=  keyStore.toString() + "\n";
-        a +=  "----------------------Database----------------------\n";
-        a +=  db.toString() + "\n";
-        a +=  "----------------------------------------------------\n";
-        a +=  "DB_BALANCE: " + db.getConfirmedBalance(true).toString() + "\n";
-        a +=  "CONFIG_IS_FUNDED: " + config.getIsFunded() + "\n";
-        a +=  "CONFIG_TXID: " + config.getFundingTxid() + "\n";
-        a +=  "DEFAULT_KEY: " + config.getDefaultAddress() + "\n";
-        a +=  "----------------------------------------------------\n";
-
-        return a;
+        return buf.toString();
     }
 
 }

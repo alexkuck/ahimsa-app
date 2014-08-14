@@ -8,7 +8,6 @@ import android.util.Log;
 
 import com.google.bitcoin.core.AbstractBlockChain;
 import com.google.bitcoin.core.Block;
-import com.google.bitcoin.core.Peer;
 import com.google.bitcoin.core.PeerGroup;
 import com.google.bitcoin.core.Sha256Hash;
 import com.google.bitcoin.core.Transaction;
@@ -16,7 +15,6 @@ import com.google.bitcoin.net.discovery.DnsDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscovery;
 import com.google.bitcoin.net.discovery.PeerDiscoveryException;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.Service;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -50,10 +48,11 @@ public class BitcoinNode
         this.context = context;
         this.application = application;
         this.config = application.getConfig();
+        peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, application.getBlockChain());
     }
 
     // Start and stop PeerGroup --------------------------------------------
-    public void startPeerGroup(@Nonnull AbstractBlockChain chain) throws Exception
+    public void startPeerGroup() throws Exception
     {
         final String lockName = context.getPackageName() + " peer connection";
         final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
@@ -67,8 +66,7 @@ public class BitcoinNode
             wakeLock.acquire();
 
             Log.d(TAG, "starting peergroup");
-            peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, chain);
-            peerGroup.setFastCatchupTimeSecs(application.getAhimsaWallet().getKeyStore().getEarliestKeyCreationTime());
+            peerGroup.setFastCatchupTimeSecs(application.getAhimsaWallet().getEarliestKeyCreationTime());
             peerGroup.setUserAgent(Constants.USER_AGENT, Constants.VERSION);
             Log.d(TAG, "started peergroup");
 
@@ -154,6 +152,10 @@ public class BitcoinNode
         Log.d(TAG, "connected peers: " + peerGroup.getConnectedPeers());
     }
 
+    public boolean isRunning()
+    {
+        return peerGroup.isRunning();
+    }
     // Public actions on PeerGroup ----------------------------------------------------------
     public Long broadcastTx(Transaction tx) throws Exception
     {

@@ -7,13 +7,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import io.ahimsa.ahimsa_app.R;
 
-public class BulletinListFragment extends ListFragment {
-
-    public BulletinListFragment()
+/**
+ * Created by askuck on 8/12/14.
+ */
+public class LogListFragment extends ListFragment
+{
+    public LogListFragment()
     {
-        // Required empty public constructor
+        // necessary empty constructor
     }
 
     @Override
@@ -29,21 +33,21 @@ public class BulletinListFragment extends ListFragment {
         return view;
     }
 
-    public void updateView(Cursor cursor)
+    public void update(Cursor cursor)
     {
         BulletinCursorAdapter adapter = (BulletinCursorAdapter) getListAdapter();
         adapter.swapCursor(cursor);
     }
 
     // ---------------------------------------------------------------------------------------------
-    public static BulletinListFragment newInstance(Activity activity, Cursor cursor)
+//    public static LogListFragment newInstance(Activity activity, Cursor cursor)
+    public static LogListFragment newInstance()
     {
-        BulletinListFragment frag = new BulletinListFragment();
+        LogListFragment frag = new LogListFragment();
 
-        BulletinCursorAdapter mAdapter = new BulletinCursorAdapter(activity, R.layout.listview_item_bulletin, cursor, -1);
-        frag.setListAdapter(mAdapter);
+//        BulletinCursorAdapter mAdapter = new BulletinCursorAdapter(activity, R.layout.listview_item_bulletin, cursor, -1);
+//        frag.setListAdapter(mAdapter);
 
         return frag;
     }
-
 }

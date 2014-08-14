@@ -20,58 +20,24 @@ import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.core.AhimsaWallet;
 import io.ahimsa.ahimsa_app.core.Utils;
 
-public class CreateBulletinActivity extends Activity {
-
+public class CreateBulletinActivity extends Activity
+{
     AhimsaApplication application;
     AhimsaWallet ahimwall;
     Configuration config;
     CreateBulletinFragment frag;
 
     @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        Log.d("CB", "ONSAVEDINSTANCESTATE");
-    }
-
-    @Override
-    public void onRestart() {
-        Log.d("CB", "ON RESTART");
-        super.onRestart();
-    }
-
-    @Override
-    public void onStart() {
-        Log.d("CB", "ONSTART");
-        super.onStart();
-    }
-
-    @Override
-    public void onResume(){
-        Log.d("CB", "ONRESUME");
-        super.onResume();
-    }
-
-    @Override
-    public void onPause(){
+    public void onPause()
+    {
         Log.d("CB", "ONPAUSE");
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         super.onPause();
     }
 
     @Override
-    public void onStop(){
-        Log.d("CB", "ONSTOP");
-        super.onStop();
-    }
-
-    @Override
-    public void onDestroy(){
-        Log.d("CB", "ONDESTROY");
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         application = (AhimsaApplication) getApplication();
         ahimwall = application.getAhimsaWallet();
         config = application.getConfig();
@@ -79,7 +45,8 @@ public class CreateBulletinActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_bulletin);
 
-        if(savedInstanceState == null) {
+        if(savedInstanceState == null)
+        {
             frag = CreateBulletinFragment.newInstance(application.getUpdateBundle());
 
             getFragmentManager().beginTransaction()
@@ -87,23 +54,28 @@ public class CreateBulletinActivity extends Activity {
                     .commit();
         }
 
-        IntentFilter filter = new IntentFilter(Constants.ACTION_AHIMWALL_UPDATE);
+        IntentFilter filter = new IntentFilter(Constants.ACTION_UPDATED_OVERVIEW);
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter);
 
     }
 
-    private BroadcastReceiver updateReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver updateReceiver = new BroadcastReceiver()
+    {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(Context context, Intent intent)
+        {
             String action = intent.getAction();
-            if(Constants.ACTION_AHIMWALL_UPDATE.equals(action)){
-                handleAhimsaWalletUpdate();
+            if(Constants.ACTION_UPDATED_OVERVIEW.equals(action))
+            {
+                updateOverview();
             }
         }
     };
 
-    private void handleAhimsaWalletUpdate() {
-        if(frag != null) {
+    private void updateOverview()
+    {
+        if(frag != null)
+        {
             frag.updateView(application.getUpdateBundle());
         }
     }
@@ -115,21 +87,23 @@ public class CreateBulletinActivity extends Activity {
 //    }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.create_bulletin, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if (id == R.id.action_broadcast_bulletin) {
-
+        if (id == R.id.action_broadcast_bulletin)
+        {
             Bundle bulletin_bundle = frag.getBulletinBundle();
             String topic   = bulletin_bundle.getString(frag.EXTRA_STRING_TOPIC);
             String message = bulletin_bundle.getString(frag.EXTRA_STRING_MESSAGE);
@@ -137,24 +111,27 @@ public class CreateBulletinActivity extends Activity {
             Long estimate = Utils.getEstimatedCost(Constants.MIN_FEE, Constants.MIN_DUST, topic.length(), message.length());
             Log.d("createdBulletinActivity", "estimated cost: " + estimate);
 
-            if(Constants.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(false)) {
+            if(Constants.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(false))
+            {
                 AhimsaService.startBroadcastBulletin(this, topic, message, Constants.MIN_FEE);
                 finish();
-            } else {
+            }
+            else
+            {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Womp! Not enough coin.");
                 builder.setMessage(String.format("%s confirmed Satoshis are required to create a bulletin. \n\nOur apologies, a future version will not have this limitation...", Constants.getMinCoinNecessary()));
                 final AlertDialog dialog = builder.create();
                 dialog.show();
             }
-
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    public Configuration getConfig() {
+    public Configuration getConfig()
+    {
         return config;
     }
 }

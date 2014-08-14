@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import io.ahimsa.ahimsa_app.core.AhimsaLog;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.core.AhimsaWallet;
 import io.ahimsa.ahimsa_app.core.AhimsaDB;
@@ -27,11 +28,13 @@ import io.ahimsa.ahimsa_app.core.AhimsaDB;
  * Created by askuck on 7/11/14.
  */
 //todo | implements AbstractAhimsaApplication
-public class AhimsaApplication extends Application {
-
+public class AhimsaApplication extends Application
+{
     public String TAG = "AhimsaApplication";
-    private AhimsaWallet ahimwall;
     private Configuration config;
+
+    private AhimsaWallet ahimwall;
+    private AhimsaLog ahimlog;
 
     private File blockStoreFile;
     private BlockStore store;
@@ -42,20 +45,24 @@ public class AhimsaApplication extends Application {
     {
         super.onCreate();
 
-        //initialize config, database, and wallet.
+        // initialize AhimsaLog
+        ahimlog = new AhimsaLog(this);
+
+        // initialize data stores: config and db
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
         AhimsaDB db = new AhimsaDB(this);
-        File keyStoreFile = getFileStreamPath(Constants.WALLET_FILENAME_PROTOBUF);
 
-        //create ahimsa wallet, verify.
-        ahimwall = new AhimsaWallet(keyStoreFile, db, config);
+        // create ahimsa wallet, verify.
+        ahimwall = new AhimsaWallet(config, db);
 //        AhimsaService.startNetworkTest(this);
 
-        //load block chain, sync block chain.
+        // load block chain, sync block chain.
         blockStoreFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.BLOCKSTORE_FILENAME);
-        if( loadBlockChain() ){
+        if( loadBlockChain() )
+        {
             //todo | handle false case
-            if( config.syncBlockChainAtStartup()){
+            if( config.syncBlockChainAtStartup())
+            {
                 AhimsaService.startSyncBlockChain(this);
             }
         }
@@ -63,14 +70,19 @@ public class AhimsaApplication extends Application {
     }
 
     // Getters--------------------------------------------------------------------------------------
+    public Configuration getConfig()
+    {
+        return config;
+    }
+
     public AhimsaWallet getAhimsaWallet()
     {
         return ahimwall;
     }
 
-    public Configuration getConfig()
+    public AhimsaLog getAhimsaLog()
     {
-        return config;
+        return ahimlog;
     }
 
     public AbstractBlockChain getBlockChain()
@@ -79,37 +91,48 @@ public class AhimsaApplication extends Application {
     }
 
     // Public Utilities-----------------------------------------------------------------------------
-    public Bundle getUpdateBundle() {
+    public Bundle getUpdateBundle()
+    {
         Bundle update_bundle = ahimwall.getUpdateBundle();
-        update_bundle.putString(Constants.EXTRA_STRING_ADDRESS, config.getDefaultAddress());
         update_bundle.putLong(Constants.EXTRA_LONG_NET_HEIGHT, config.getHighestBlockSeen());
         update_bundle.putLong(Constants.EXTRA_LONG_LOCAL_HEIGHT, chain.getBestChainHeight());
 
         return update_bundle;
     }
 
-    public Cursor getBulletinCursor() {
+    public Cursor getBulletinCursor()
+    {
         return ahimwall.getBulletinCursor();
     }
 
     // Load Block Chain-----------------------------------------------------------------------------
-    private boolean loadBlockChain(){
-        try {
+    private boolean loadBlockChain()
+    {
+        try
+        {
             final boolean blockStoreFileExists = blockStoreFile.exists();
             store = new SPVBlockStore(Constants.NETWORK_PARAMETERS, blockStoreFile);
             //store.getChainHead(); // detect corruptions as early as possible
 
-            final long earliestKeyCreationTime = ahimwall.getKeyStore().getEarliestKeyCreationTime();
+            final long earliestKeyCreationTime = ahimwall.getEarliestKeyCreationTime();
             Log.d(TAG, String.format("blockChainFileExists: %s | earliestKeyCreationTime %d", blockStoreFileExists, earliestKeyCreationTime));
-            if (!blockStoreFileExists  && earliestKeyCreationTime > 0){
-                try{
+
+            if (!blockStoreFileExists  && earliestKeyCreationTime > 0)
+            {
+                try
+                {
                     final InputStream checkpointsInputStream = getAssets().open(Constants.CHECKPOINTS_FILENAME);
                     CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream, store, earliestKeyCreationTime);
-                }catch (final IOException x){
+                    Log.d(TAG, "STEP 3");
+                }
+                catch (final IOException x)
+                {
                     Log.e(TAG, "problem reading checkpoints, continuing without", x);
                 }
             }
-        } catch (BlockStoreException e) {
+        }
+        catch (BlockStoreException e)
+        {
             blockStoreFile.delete();
 
             //todo: look here
@@ -118,13 +141,16 @@ public class AhimsaApplication extends Application {
             throw new Error(msg, e);
         }
 
-        try {
+        try
+        {
             chain = new BlockChain(Constants.NETWORK_PARAMETERS, store);
+            Log.d(TAG, "STEP 4");
             return true;
-        } catch (BlockStoreException e) {
+        }
+        catch (BlockStoreException e)
+        {
             throw new Error("blockchain cannot be created", e);
         }
-
     }
 
 }

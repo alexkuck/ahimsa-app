@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.bitcoin.core.Coin;
+import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutPoint;
@@ -14,6 +15,8 @@ import com.google.bitcoin.core.TransactionInput;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.Transaction.SigHash;
+import com.google.bitcoin.wallet.BasicKeyChain;
+import com.google.bitcoin.wallet.KeyBag;
 
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
@@ -103,7 +106,7 @@ public class BulletinBuilder
 
     }
 
-    private static void addChangeOutput(Wallet keyStore, Transaction tx, List<TransactionOutput> unspents) throws Exception
+    private static void addChangeOutput(ECKey key, Transaction tx, List<TransactionOutput> unspents) throws Exception
     {
         Coin fee        = Coin.valueOf(Constants.MIN_FEE);
         Coin in_coin    = totalInCoin(unspents);
@@ -127,11 +130,11 @@ public class BulletinBuilder
         }
 
         Coin min = Coin.valueOf( Constants.getMinCoinNecessary() );
-//        Address default_addr = new Address(Constants.NETWORK_PARAMETERS, default_addr);
-        Address default_addr = keyStore.getChangeAddress();
+        Address default_addr = key.toAddress(Constants.NETWORK_PARAMETERS);
+
         while(total.compareTo(Coin.ZERO) == 1)
         {
-            if(total.compareTo(min) > 0)
+            if(total.subtract(min).compareTo(min) >= 0)
             {
                 tx.addOutput( new TransactionOutput(Constants.NETWORK_PARAMETERS, tx, min, default_addr) );
                 total = total.subtract(min);
@@ -165,7 +168,7 @@ public class BulletinBuilder
     }
 
     //----------------------------------------------------------------------------------------------
-    public static Transaction createTx(Wallet keyStore, List<TransactionOutput> unspents, String topic, String message) throws Exception
+    public static Transaction createTx(ECKey key, List<TransactionOutput> unspents, String topic, String message) throws Exception
     {
         //create new transaction
         Transaction bulletin = new Transaction(Constants.NETWORK_PARAMETERS);
@@ -175,10 +178,12 @@ public class BulletinBuilder
         addBulletinOutputs(bulletin, topic, message);
 
         //add change output to transaction
-        addChangeOutput(keyStore, bulletin, unspents);
+        addChangeOutput(key, bulletin, unspents);
 
         //sign the inputs
-        bulletin.signInputs(SigHash.ALL, keyStore);
+        BasicKeyChain keychain = new BasicKeyChain();
+        keychain.importKey(key);
+        bulletin.signInputs(SigHash.ALL, false, keychain);
         return bulletin;
     }
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="network_test">Network Test</string>
+    <string name="reset_ahimwall">Reset AhimsaWallet</string>
+    <string name="broadcast_bulletin">Broadcast Bulletin</string>
+    <string name="broadcast_tx">Broadcast Transaction</string>
+    <string name="sync_block_chain">Sync Block Chain</string>
+    <string name="import_block">Import Block</string>
+    <string name="confirm_tx">Confirm Transaction</string>
+
+
+
+
+
+</resources>

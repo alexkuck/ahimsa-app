@@ -14,7 +14,14 @@ public class Constants {
     public static final String USER_AGENT = "ahimsa-app";
     public static final String VERSION = "alpha";
 
-    public static final String ACTION_AHIMWALL_UPDATE = "action_ahimwall_update";
+    public static final String ACTION_UPDATED_OVERVIEW = "action_updated_overview";
+    public static final String ACTION_UPDATED_QUEUE = "action_updated_queue";
+    public static final String ACTION_UPDATED_LOG = "action_updated_log";
+    public static final String ACTION_UPDATED_BULLETIN = "action_updated_bulletin";
+
+
+
+
     public static final String EXTRA_INT_CONF = "int_confirmed";
     public static final String EXTRA_INT_UNCONF = "int_unconfirmed";
     public static final String EXTRA_INT_DRAFT = "int_draft";

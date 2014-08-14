@@ -28,6 +28,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
+import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.core.Utils;
@@ -74,7 +75,7 @@ public class FundService extends IntentService {
             if(ACTION_REQUEST_FUNDED_TX_USE_CONFIG.equals(action)) {
                 AhimsaApplication application = (AhimsaApplication) getApplication();
                 Configuration config = application.getConfig();
-                handleRequestFundingTx(config.getFundingIP(), config.getDefaultAddress());
+                handleRequestFundingTx(config.getFundingIP(), config.getDefaultECKey().toAddress(Constants.NETWORK_PARAMETERS).toString());
             }
 
         }

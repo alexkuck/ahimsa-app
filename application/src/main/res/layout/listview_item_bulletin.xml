@@ -86,12 +86,10 @@
         android:id="@+id/button_seperator_2"
         android:layout_width="1dip"
         android:layout_height="1dip"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
         android:background="#b0b0b0"
-        android:layout_alignTop="@+id/confirm_button"
         android:layout_alignBottom="@+id/confirm_button"
-        android:layout_toLeftOf="@+id/confirm_button"/>
+        android:layout_toLeftOf="@+id/confirm_button"
+        android:layout_alignTop="@+id/confirm_button"/>
 
 
     <LinearLayout
