@@ -20,6 +20,7 @@ import android.widget.Toast;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
+import io.ahimsa.ahimsa_app.core.Utils;
 import io.ahimsa.ahimsa_app.fund.FundService;
 import io.ahimsa.ahimsa_app.util.Qr;
 
@@ -49,7 +50,7 @@ public class OverviewFragment extends Fragment
                 AlertDialog.Builder builer = new AlertDialog.Builder(getActivity());
 
                 builer.setTitle("Import a Block");
-                builer.setMessage("This little popup will discover all relevant funding transactions within a block.");
+                builer.setMessage("Discover all relevant funding transactions within a block.");
                 builer.setView(inflater);
 
                 final EditText heightEditText = (EditText) inflater.findViewById(R.id.height_edit_text);
@@ -130,7 +131,7 @@ public class OverviewFragment extends Fragment
 
             final TextView available_balance = (TextView) v.findViewById(R.id.available_satoshi_value);
             Long avail_bal = new Long(args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL));
-            available_balance.setText(avail_bal.toString().replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
+            available_balance.setText(Utils.commarizer(avail_bal.toString()));
 
             final TextView txouts_value = (TextView) v.findViewById(R.id.available_txout_value);
             Integer avail_txouts = args.getInt(Constants.EXTRA_INT_AVAILABLE_TXOUTS);
@@ -143,8 +144,7 @@ public class OverviewFragment extends Fragment
             Long est_char = est_bulletins*(Constants.MAX_TOPIC_LEN + Constants.MAX_MESSAGE_LEN);
 
             bulletin_estimate.setText(est_bulletins.toString());
-            character_estimate.setText(est_char.toString().replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
-
+            character_estimate.setText( Utils.commarizer(est_char.toString()) );
 
             final TextView confirmed_count = (TextView) v.findViewById(R.id.confirmed_count_value);
             Integer conf_count = new Integer( args.getInt(Constants.EXTRA_INT_CONF));
@@ -173,15 +173,13 @@ public class OverviewFragment extends Fragment
             final TextView full_address_value = (TextView) v.findViewById(R.id.full_address_value);
             full_address_value.setText(address);
 
-
-
-            final TextView wireless_connection_value = (TextView) v.findViewById(R.id.wireless_connection_value);
-            Long net_height = args.getLong(Constants.EXTRA_LONG_NET_HEIGHT);
-            wireless_connection_value.setText(net_height.toString());
-
-            final TextView bitcoin_mainnet_value = (TextView) v.findViewById(R.id.bitcoin_mainnet_value);
-            Long local_height = args.getLong(Constants.EXTRA_LONG_LOCAL_HEIGHT);
-            bitcoin_mainnet_value.setText(local_height.toString());
+//            final TextView wireless_connection_value = (TextView) v.findViewById(R.id.wireless_connection_value);
+//            Long net_height = args.getLong(Constants.EXTRA_LONG_NET_HEIGHT);
+//            wireless_connection_value.setText(net_height.toString());
+//
+//            final TextView bitcoin_mainnet_value = (TextView) v.findViewById(R.id.bitcoin_mainnet_value);
+//            Long local_height = args.getLong(Constants.EXTRA_LONG_LOCAL_HEIGHT);
+//            bitcoin_mainnet_value.setText(local_height.toString());
 
         }
     }

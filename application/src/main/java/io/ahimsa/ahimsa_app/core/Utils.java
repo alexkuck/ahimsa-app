@@ -42,6 +42,16 @@ public class Utils {
         return new String(hexChars);
     }
 
+    public static String commarizer(String number)
+    {
+        return number.replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2);
+    }
+
+    public static String abbreviator(String word, int len)
+    {
+        return word.substring(0, len) + "...";
+    }
+
     //----------------------------------------------------------------------------------------------
 //    public static BigInteger satoshiToSelf(Transaction tx, Long in_coin, Long _fee)
 //    {

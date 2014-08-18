@@ -3,6 +3,7 @@ package io.ahimsa.ahimsa_app.core;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -134,11 +135,11 @@ public class AhimsaService extends IntentService
             final String action = intent.getAction();
             if (ACTION_NETWORK_TEST.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.network_test) );
+                ahimlog.pushLog(getString(R.string.network_test) + getString(R.string.to_queue), AhimsaLog.queue);
             }
             else if (ACTION_RESET_AHIMSA_WALLET.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.reset_ahimwall) );
+                ahimlog.pushLog(getString(R.string.reset_ahimwall) + getString(R.string.to_queue), AhimsaLog.queue);
             }
             else if (ACTION_BROADCAST_BULLETIN.equals(action))
             {
@@ -147,29 +148,29 @@ public class AhimsaService extends IntentService
                 // final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
                 // ahimwall.reserveTxOuts(topic, message, fee);
 
-                ahimlog.pushQueue( getString(R.string.broadcast_bulletin) );
+                ahimlog.pushLog(getString(R.string.broadcast_bulletin) + getString(R.string.to_queue), AhimsaLog.queue);
                 ahimwall.reserveTxOuts();
                 updatedOverview();
             }
             else if (ACTION_BROADCAST_TX.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.broadcast_tx) );
+                ahimlog.pushLog(getString(R.string.broadcast_tx) + getString(R.string.to_queue), AhimsaLog.queue);
             }
             else if (ACTION_SYNC_BLOCK_CHAIN.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.sync_block_chain) );
+                ahimlog.pushLog(getString(R.string.sync_block_chain) + getString(R.string.to_queue), AhimsaLog.queue);
             }
             else if (ACTION_IMPORT_BLOCK.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.import_block) );
+                ahimlog.pushLog(getString(R.string.import_block) + getString(R.string.to_queue), AhimsaLog.queue);
             }
             else if (ACTION_CONFIRM_TX.equals(action))
             {
-                ahimlog.pushQueue( getString(R.string.confirm_tx) );
+                ahimlog.pushLog(getString(R.string.confirm_tx) + getString(R.string.to_queue), AhimsaLog.queue);
             }
         }
 
-        updatedQueue();
+        updatedLog();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -240,8 +241,8 @@ public class AhimsaService extends IntentService
                 handleConfirmTx(txid);
             }
 
-            //todo: certain updates for certain actions
-            updatedOverview();
+            updatedLog();
+            updatedOverview(); //todo this not here but updatelog yes
 
             Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
         }
@@ -254,7 +255,6 @@ public class AhimsaService extends IntentService
         LocalBroadcastManager.getInstance(this).sendBroadcast(update_intent);
     }
 
-    //todo implement these
     private void updatedQueue()
     {
         Intent intent = new Intent();
@@ -299,8 +299,8 @@ public class AhimsaService extends IntentService
     {
         // todo | implement.
         // Reset then re-initialization config, database, and keyStore.
-        ahimwall.toLog();
-        ahimwall.resetDB();
+//        ahimwall.toLog();
+//        ahimwall.resetDB();
         ahimwall.toLog();
     }
 
@@ -327,11 +327,25 @@ public class AhimsaService extends IntentService
             {
                 Long highest_block = node.broadcastTx(bulletin);
                 ahimwall.commitTransaction(bulletin, highest_block, false);
+                updatedBulletin();
+
+                String words = getString(R.string.success_broadcast_bulletin);
+                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
+                String details = String.format(words, topic, abbreviated_txid);
+//                String details = String.format(words, topic, bulletin.getHashAsString());
+                ahimlog.pushLog( details, AhimsaLog.normal );
             }
             catch (Exception e)
             {
                 // Peergroup was null or transaction future was not received
                 ahimwall.unreserveTxOuts();
+
+                String words = getString(R.string.fail_broadcast_bulletin);
+                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
+                String details = String.format(words, topic, abbreviated_txid);
+//                String details = String.format(words, e.getMessage(), bulletin.getHashAsString());
+                ahimlog.pushLog( details, AhimsaLog.error );
+
                 e.printStackTrace();
             }
         }
@@ -346,11 +360,24 @@ public class AhimsaService extends IntentService
         {
             Long highest_block = node.broadcastTx(tx);
             ahimwall.commitTransaction(tx, highest_block, assume_confirmed);
+            updatedBulletin();
+
+            String words = getString(R.string.success_broadcast_tx);
+            String abbreviated_txid = Utils.abbreviator(tx.getHashAsString(), 15);
+            String details = String.format(words, abbreviated_txid);
+//            String details = String.format(words, tx.getHashAsString());
+            ahimlog.pushLog( details, AhimsaLog.normal );
         }
         catch (Exception e)
         {
             // Peergroup was null or transaction future was not received
             e.printStackTrace();
+
+            String words = getString(R.string.fail_broadcast_tx);
+            String abbreviated_txid = Utils.abbreviator(tx.getHashAsString(), 15);
+            String details = String.format(words, e.getMessage(), abbreviated_txid);
+//            String details = String.format(words, e.getMessage(), tx.getHashAsString());
+            ahimlog.pushLog( details, AhimsaLog.error );
         }
     }
 
@@ -358,10 +385,22 @@ public class AhimsaService extends IntentService
     {
         try
         {
+            String before_words = getString(R.string.start_sync_block_chain);
+            String before_details = String.format(before_words, application.getBlockChain().getBestChainHeight() );
+            ahimlog.pushLog( before_details, AhimsaLog.normal );
+
             node.downloadBlockChain();
+
+            String after_words = getString(R.string.finish_sync_block_chain);
+            String after_details = String.format(after_words, application.getBlockChain().getBestChainHeight() );
+            ahimlog.pushLog( after_details, AhimsaLog.normal );
         }
         catch (Exception e) {
             e.printStackTrace();
+
+            String words = getString(R.string.fail_sync_block_chain);
+            String details = String.format(words, e.getMessage());
+            ahimlog.pushLog( details, AhimsaLog.error );
         }
 
     }
@@ -377,7 +416,7 @@ public class AhimsaService extends IntentService
                 return;
 
             if(import_height >= chain.getBestChainHeight() )
-                node.downloadBlockChain();
+                handleSyncBlockChain();
 
             StoredBlock targetBlock = getBlock(chain.getBlockStore(), import_height);
             Sha256Hash hash = targetBlock.getHeader().getHash();
@@ -386,24 +425,36 @@ public class AhimsaService extends IntentService
         catch (Exception e)
         {
             e.printStackTrace();
+
+            String words = getString(R.string.fail_to_import);
+            String details = String.format(words, e.getMessage());
+            ahimlog.pushLog( details, AhimsaLog.error );
         }
 
         if( complete_block != null )
         {
             List<Transaction> relevantTxs = findRelevantTxs(complete_block);
 
+            String words = getString(R.string.found_relevant_txs);
+            String details = String.format(words, relevantTxs.size(), import_height);
+            ahimlog.pushLog( details, AhimsaLog.normal );
+
             for(Transaction tx : relevantTxs)
             {
                 ahimwall.commitTransaction(tx, import_height, true);
             }
         }
+        else
+        {
+            String words = getString(R.string.fail_to_import);
+            String details = String.format(words, "complete_block was null");
+            ahimlog.pushLog( details, AhimsaLog.error );
+        }
 
     }
 
-    public void handleConfirmTx(String txid) {
-
-        //todo fail feedback
-
+    public void handleConfirmTx(String txid)
+    {
         Log.d(TAG, "handleConfirmTx | " + txid);
 
         Bundle bundle = ahimwall.getTxBundle(txid);
@@ -420,16 +471,7 @@ public class AhimsaService extends IntentService
 
         if(chain.getChainHead().getHeader().getTimeSeconds() < upper_time)
         {
-            try
-            {
-                Log.d(TAG, "Start download block chain");
-                node.downloadBlockChain();
-                Log.d(TAG, "Finish download block chain");
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            handleSyncBlockChain();
         }
 
         Long lower_height = bundle.getLong(AhimsaDB.highest_block);
@@ -454,10 +496,13 @@ public class AhimsaService extends IntentService
                 {
                     Log.d(TAG, "CONTAINED TX in " + downloaded.getHashAsString());
                     ahimwall.confirmTx(txid, lower_height);
+                    updatedBulletin();
+
+
+
                     break;
                 }
 
-                // todo seconds vs milliseconds
                 if( downloaded.getTimeSeconds() > upper_time )
                 {
                     ahimwall.dropTx(txid, lower_height);
@@ -471,10 +516,6 @@ public class AhimsaService extends IntentService
         {
             e.printStackTrace();
         }
-
-        //TODO TEMPORARY
-        ahimwall.setHighestBlock(txid, bundle.getLong(AhimsaDB.highest_block));
-
     }
 
     // Private Utilities ---------------------------------------------------------------------------
@@ -490,7 +531,7 @@ public class AhimsaService extends IntentService
             Log.d(TAG, "upper_time: " + upper_time );
 
             // This overshoot is imperative, A transaction is only dropped from AhimsaWallet when a
-            // block's timestamp is greater than the upper_time estimate.
+            // block's timestamp is greater than the upper_time estimate. todo | think of alternatives
             while(current.getHeader().getTimeSeconds() > upper_time  + (Constants.THREE_DAYS / 24))
             {
                 StoredBlock previous = store.get(current.getHeader().getPrevBlockHash());

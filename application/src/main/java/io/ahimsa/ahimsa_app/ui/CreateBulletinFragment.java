@@ -38,7 +38,7 @@ public class CreateBulletinFragment extends Fragment {
         updateView(v, getArguments());
 
         estimatedCost = (TextView) v.findViewById(R.id.estimated_cost_value);
-        estimatedCost.setText(String.valueOf(Constants.MIN_FEE).replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
+        estimatedCost.setText(Utils.commarizer(String.valueOf(Constants.MIN_FEE)));
 
         EditText topicEditText = (EditText) v.findViewById(R.id.topic_edit_text);
         topicCount = (TextView) v.findViewById(R.id.topic_count_value);
@@ -93,7 +93,7 @@ public class CreateBulletinFragment extends Fragment {
         int x = (top_count + msg_count) % Constants.CHAR_PER_OUT;
         if(x == 0 || x == 1 || x == 19) {
             String est = String.valueOf(Utils.getEstimatedCost(Constants.MIN_FEE, Constants.MIN_DUST, top_count, msg_count));
-            estimatedCost.setText(est.replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
+            estimatedCost.setText(Utils.commarizer(est));
         }
     }
 
@@ -112,7 +112,7 @@ public class CreateBulletinFragment extends Fragment {
 
             Long confirmed_balance = args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL);
             final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_balance_value);
-            confirmed_value.setText(confirmed_balance.toString().replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2));
+            confirmed_value.setText( Utils.commarizer(confirmed_balance.toString()) );
 
 
             final TextView checksum_value = (TextView) v.findViewById(R.id.checksum_value);

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,7 +23,6 @@ import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
 import io.ahimsa.ahimsa_app.core.AhimsaService;
-import io.ahimsa.ahimsa_app.fund.FundService;
 
 public class AhimsaActivity extends Activity {
 
@@ -61,7 +59,6 @@ public class AhimsaActivity extends Activity {
     }
 
     // UpdateReceiver ------------------------------------------------------------------------------
-    // todo split
     private BroadcastReceiver updateReceiver = new BroadcastReceiver()
     {
         @Override
@@ -117,7 +114,7 @@ public class AhimsaActivity extends Activity {
         {
             switch(index)
             {
-                case 0:     LogListFragment frag0 = LogListFragment.newInstance();
+                case 0:     LogListFragment frag0 = LogListFragment.newInstance(activity, application.getAhimsaLog().getLog()); //todo: temporary
                             mPageReferences.put(index, frag0);
                             return frag0;
 
@@ -147,22 +144,26 @@ public class AhimsaActivity extends Activity {
             OverviewFragment overview_frag = (OverviewFragment) getFragment( 1 );
             if(overview_frag != null)
             {
-                overview_frag.updateView( application.getUpdateBundle() );
+                overview_frag.updateView(application.getUpdateBundle());
             }
         }
 
         public void updateQueue()
         {
-            LogListFragment log_frag = (LogListFragment) getFragment(0);
+            QueueListFragment log_frag = (QueueListFragment) getFragment(0);
             if(log_frag != null)
             {
-//                log_frag.up
+                log_frag.updateView(application.getAhimsaLog().getQueue());
             }
         }
 
         public void updateLog()
         {
             LogListFragment log_frag = (LogListFragment) getFragment(0);
+            if(log_frag != null)
+            {
+                log_frag.updateView(application.getAhimsaLog().getLog());
+            }
         }
 
         public void updateBulletin()
@@ -170,32 +171,8 @@ public class AhimsaActivity extends Activity {
             BulletinListFragment bullet_frag = (BulletinListFragment) getFragment( 2 );
             if(bullet_frag != null)
             {
-                bullet_frag.updateView( application.getBulletinCursor() );
+                bullet_frag.updateView(application.getBulletinCursor());
             }
-        }
-
-        @Deprecated
-        public void updateFragments()
-        {
-            LogListFragment log_frag            = (LogListFragment) getFragment(0);
-            OverviewFragment overview_frag      = (OverviewFragment) getFragment( 1 );
-            BulletinListFragment bullet_frag    = (BulletinListFragment) getFragment( 2 );
-
-            if(log_frag != null)
-            {
-                // todo something
-            }
-
-            if(overview_frag != null)
-            {
-                overview_frag.updateView( application.getUpdateBundle() );
-            }
-
-            if(bullet_frag != null)
-            {
-                bullet_frag.updateView( application.getBulletinCursor() );
-            }
-
         }
 
     }
@@ -220,7 +197,7 @@ public class AhimsaActivity extends Activity {
         if (id == R.id.action_settings)
         {
             AhimsaService.startResetAhimsaWallet(this);
-            AhimsaService.startSyncBlockChain(this);
+//            AhimsaService.startSyncBlockChain(this);
             return true;
         }
         else if (id == R.id.action_create_bulletin)

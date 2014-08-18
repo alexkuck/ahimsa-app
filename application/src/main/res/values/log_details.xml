@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="network_test">Network Test</string>
-    <string name="reset_ahimwall">Reset AhimsaWallet</string>
-    <string name="broadcast_bulletin">Broadcast Bulletin</string>
-    <string name="broadcast_tx">Broadcast Transaction</string>
-    <string name="sync_block_chain">Sync Block Chain</string>
-    <string name="import_block">Import Block</string>
-    <string name="confirm_tx">Confirm Transaction</string>
+    <string name="network_test">        Network Test                     </string>
+    <string name="reset_ahimwall">      Reset AhimsaWallet               </string>
+    <string name="broadcast_bulletin">  Broadcast Bulletin               </string>
+    <string name="broadcast_tx">        Broadcast Transaction            </string>
+    <string name="sync_block_chain">    Sync Block Chain                 </string>
+    <string name="import_block">        Import Block                     </string>
+    <string name="confirm_tx">          Confirm Transaction              </string>
+
+    <string name="to_queue">            " request"                       </string>
 
 
+    <string name="success_broadcast_bulletin">  Successful broadcast of bulletin\ntopic: %1$s\ntxid: %2$s</string>
+    <string name="fail_broadcast_bulletin">     Unsuccessful broadcast of bulletin\nerror: %1$s\ntxid: %2$s</string>
 
+    <string name="start_sync_block_chain">      Starting download of block chain\nbegin height: %1$s            </string>
+    <string name="finish_sync_block_chain">     Finished download of block chain\nend height: %1$s            </string>
+    <string name="fail_sync_block_chain">       Unsuccessful download of block chain\nerror: %1$s      </string>
+
+    <string name="success_broadcast_tx">        Successful broadcast of transaction\ntxid: %1$s         </string>
+    <string name="fail_broadcast_tx">           Unsuccessful broadcast of transaction\ntxid: %1$s       </string>
+
+    <string name="fail_to_import">              Unsuccessful import of block\nerror: %1$s           </string>
+    <string name="found_relevant_txs">          Found %1$s relevant transactions in block %2$s      </string>
+
+    <string name="confirmd_tx">                 Confirmed transaction</string>
 
 
 </resources>

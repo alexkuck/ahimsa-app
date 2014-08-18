@@ -1,8 +1,10 @@
 package io.ahimsa.ahimsa_app.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,19 +21,18 @@ import io.ahimsa.ahimsa_app.core.AhimsaService;
 /**
  * Created by askuck on 7/25/14.
  */
-public class BulletinCursorAdapter extends ResourceCursorAdapter {
-
+public class BulletinCursorAdapter extends ResourceCursorAdapter
+{
     final public String TAG = "BulletinCursorAdapter";
 
-
-    public BulletinCursorAdapter(Context context, int layout, Cursor c, int flags) {
+    public BulletinCursorAdapter(Context context, int layout, Cursor c, int flags)
+    {
         super(context, layout, c, flags);
     }
 
-
     @Override
-    public void bindView(View view, Context context, Cursor cursor) {
-
+    public void bindView(View view, final Context context, Cursor cursor)
+    {
         Log.d(TAG, "bindView()");
 
         //[_id, txid, sent_time, confirmed, highest_block, topic, message, txout_total, txout_count]
@@ -42,10 +43,10 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
         Date resultdate = new Date(time);
         time_value.setText( sdf.format(resultdate) );
 
-
         TextView status_value = (TextView) view.findViewById(R.id.status_value);
         int confirmed = cursor.getInt(3);
-        switch(confirmed){
+        switch(confirmed)
+        {
             case 0:
                 status_value.setText("Unconfirmed");
                 status_value.setTextColor(Color.rgb(194, 0, 48));
@@ -56,7 +57,6 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
 //                status_value.setTextColor(status_value.getTextColors().getDefaultColor());
                 status_value.setTextColor(Color.BLACK);
         }
-
 
         TextView topic_value = (TextView) view.findViewById(R.id.topic_value);
         String topic = cursor.getString(5);
@@ -75,9 +75,9 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
         confirm_button.setTag( cursor.getString(1) );
         confirm_button.setOnClickListener( new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(View view)
+            {
                 AhimsaService.startConfirmTx(view.getContext(), view.getTag().toString());
-                Log.d("bulletinCursorAdapter", "BUTTON CLICKED: " + view.getTag());
             }
         });
 
@@ -85,8 +85,11 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter {
         details_button.setTag( cursor.getString(1) );
         details_button.setOnClickListener( new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Log.d("bulletinCursorAdapter", "BUTTON CLICKED: " + view.getTag());
+            public void onClick(View view)
+            {
+
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://ahimsa.io" + ":5000/bulletin/" + view.getTag().toString()));
+                context.startActivity(browserIntent);
             }
         });
 

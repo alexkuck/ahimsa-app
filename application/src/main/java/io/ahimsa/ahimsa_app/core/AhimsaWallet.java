@@ -281,10 +281,9 @@ public class AhimsaWallet {
         buf.append("private key: " + key.getPrivKey().toString() + "\n");
         buf.append("public key: " + key.toAddress(Constants.NETWORK_PARAMETERS) + "\n");
         buf.append("earliestKeyCreationTime(): " + getEarliestKeyCreationTime() + "\n");
+        buf.append("DB_BALANCE: " + db.getConfirmedBalance(true).toString() + "\n");
         buf.append("----------------------Database----------------------\n");
         buf.append(db.toString() + "\n");
-        buf.append("----------------------------------------------------\n");
-        buf.append("DB_BALANCE: " + db.getConfirmedBalance(true).toString() + "\n");
 
         return buf.toString();
     }

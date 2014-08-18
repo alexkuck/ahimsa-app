@@ -18,5 +18,5 @@
         android:gravity="center"
         android:textStyle="italic"
         android:textColor="#00b0b0"
-        android:text="No bulletins"/>
+        android:text="No Bulletins"/>
 </LinearLayout>
