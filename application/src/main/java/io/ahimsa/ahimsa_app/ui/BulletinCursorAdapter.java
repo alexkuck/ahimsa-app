@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -78,6 +79,7 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter
             public void onClick(View view)
             {
                 AhimsaService.startConfirmTx(view.getContext(), view.getTag().toString());
+                Toast.makeText(context, "Transaction confirmation request.\n" + view.getTag().toString(), Toast.LENGTH_LONG).show();
             }
         });
 
@@ -87,7 +89,6 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter
             @Override
             public void onClick(View view)
             {
-
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://ahimsa.io" + ":5000/bulletin/" + view.getTag().toString()));
                 context.startActivity(browserIntent);
             }

@@ -207,24 +207,33 @@ public class AhimsaService extends IntentService
 
             if(ACTION_NETWORK_TEST.equals(action))
             {
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.network_test), AhimsaLog.normal);
                 handleNetworkTest();
             }
             else if(ACTION_RESET_AHIMSA_WALLET.equals(action))
             {
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.reset_ahimwall), AhimsaLog.normal);
                 handleResetAhimsaWallet();
+                updatedOverview();
             }
             else if(ACTION_BROADCAST_BULLETIN.equals(action))
             {
                 final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
                 final String message = intent.getStringExtra(EXTRA_STRING_MESSAGE);
                 final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
+
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.broadcast_bulletin), AhimsaLog.normal);
                 handleBroadcastBulletin(topic, message, fee);
+                updatedOverview();
             }
             else if(ACTION_BROADCAST_TX.equals(action))
             {
                 final byte[] tx_raw = intent.getByteArrayExtra(EXTRA_BYTE_ARRAY_TX);
                 final boolean assume_confirmed = intent.getBooleanExtra(EXTRA_BOOLEAN_ASSUME_CONF, false);
+
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.broadcast_tx), AhimsaLog.normal);
                 handleBroadcastTx(tx_raw, assume_confirmed);
+                updatedOverview();
             }
             else if(ACTION_SYNC_BLOCK_CHAIN.equals(action))
             {
@@ -233,16 +242,21 @@ public class AhimsaService extends IntentService
             else if(ACTION_IMPORT_BLOCK.equals(action))
             {
                 final long height = intent.getLongExtra(EXTRA_LONG_HEIGHT, -1);
+
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.import_block), AhimsaLog.normal);
                 handleImportBlock(height);
+                updatedOverview();
             }
             else if(ACTION_CONFIRM_TX.equals(action))
             {
                 final String txid = intent.getStringExtra(EXTRA_STRING_TXID);
+
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.confirm_tx), AhimsaLog.normal);
                 handleConfirmTx(txid);
+                updatedOverview();
             }
 
             updatedLog();
-            updatedOverview(); //todo this not here but updatelog yes
 
             Log.d(TAG, "Completing AhimsaService, action | " + intent.getAction());
         }
@@ -280,6 +294,7 @@ public class AhimsaService extends IntentService
     //----------------------------------------------------------------------------------------------
     private void handleNetworkTest()
     {
+        //todo logsssss
         try
         {
             Long peergroup_height = node.getNetworkHeight();
@@ -297,6 +312,8 @@ public class AhimsaService extends IntentService
 
     private void handleResetAhimsaWallet()
     {
+        //todo logsssss
+
         // todo | implement.
         // Reset then re-initialization config, database, and keyStore.
 //        ahimwall.toLog();
@@ -330,9 +347,9 @@ public class AhimsaService extends IntentService
                 updatedBulletin();
 
                 String words = getString(R.string.success_broadcast_bulletin);
-                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
-                String details = String.format(words, topic, abbreviated_txid);
-//                String details = String.format(words, topic, bulletin.getHashAsString());
+//                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
+//                String details = String.format(words, topic, abbreviated_txid);
+                String details = String.format(words, topic, bulletin.getHashAsString());
                 ahimlog.pushLog( details, AhimsaLog.normal );
             }
             catch (Exception e)
@@ -341,9 +358,9 @@ public class AhimsaService extends IntentService
                 ahimwall.unreserveTxOuts();
 
                 String words = getString(R.string.fail_broadcast_bulletin);
-                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
-                String details = String.format(words, topic, abbreviated_txid);
-//                String details = String.format(words, e.getMessage(), bulletin.getHashAsString());
+//                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
+//                String details = String.format(words, e.getMessage(), abbreviated_txid);
+                String details = String.format(words, e.getMessage(), bulletin.getHashAsString());
                 ahimlog.pushLog( details, AhimsaLog.error );
 
                 e.printStackTrace();
@@ -363,9 +380,9 @@ public class AhimsaService extends IntentService
             updatedBulletin();
 
             String words = getString(R.string.success_broadcast_tx);
-            String abbreviated_txid = Utils.abbreviator(tx.getHashAsString(), 15);
-            String details = String.format(words, abbreviated_txid);
-//            String details = String.format(words, tx.getHashAsString());
+//            String abbreviated_txid = Utils.abbreviator(tx.getHashAsString(), 15);
+//            String details = String.format(words, abbreviated_txid);
+            String details = String.format(words, tx.getHashAsString());
             ahimlog.pushLog( details, AhimsaLog.normal );
         }
         catch (Exception e)
@@ -413,7 +430,10 @@ public class AhimsaService extends IntentService
         try
         {
             if(import_height > node.getNetworkHeight())
+            {
+                ahimlog.pushLog(getString(R.string.import_exceeds_network), AhimsaLog.normal);
                 return;
+            }
 
             if(import_height >= chain.getBestChainHeight() )
                 handleSyncBlockChain();
@@ -436,7 +456,7 @@ public class AhimsaService extends IntentService
             List<Transaction> relevantTxs = findRelevantTxs(complete_block);
 
             String words = getString(R.string.found_relevant_txs);
-            String details = String.format(words, relevantTxs.size(), import_height);
+            String details = String.format(words, import_height, relevantTxs.size());
             ahimlog.pushLog( details, AhimsaLog.normal );
 
             for(Transaction tx : relevantTxs)
@@ -459,10 +479,20 @@ public class AhimsaService extends IntentService
 
         Bundle bundle = ahimwall.getTxBundle(txid);
         if(bundle == null)
+        {
+            String words = getString(R.string.tx_bundle_null);
+            String details = String.format(words, txid);
+            ahimlog.pushLog(details, AhimsaLog.error);
             return;
+        }
 
         if(bundle.getBoolean(AhimsaDB.confirmed))
+        {
+            String words = getString(R.string.tx_already_confirmed);
+            String details = String.format(words, txid);
+            ahimlog.pushLog(details, AhimsaLog.normal);
             return;
+        }
 
         Log.d(TAG, "Bundle is not null and tx is unconfirmed");
 
@@ -481,7 +511,12 @@ public class AhimsaService extends IntentService
         Log.d(TAG, "upper_time   | " + upper_time.toString());
 
         if(hashes == null)
+        {
+            String words = getString(R.string.sequential_hashes_null);
+            String details = String.format(words, txid);
+            ahimlog.pushLog(details, AhimsaLog.error);
             return;
+        }
 
         try
         {
@@ -494,18 +529,23 @@ public class AhimsaService extends IntentService
 
                 if( containsTx(downloaded, txid) )
                 {
-                    Log.d(TAG, "CONTAINED TX in " + downloaded.getHashAsString());
+                    String words = getString(R.string.confirmed_tx);
+                    String details = String.format(words, txid, lower_height);
+                    ahimlog.pushLog(details, AhimsaLog.normal);
+
                     ahimwall.confirmTx(txid, lower_height);
                     updatedBulletin();
-
-
-
                     break;
                 }
 
                 if( downloaded.getTimeSeconds() > upper_time )
                 {
+                    String words = getString(R.string.dropped_tx);
+                    String details = String.format(words, txid);
+                    ahimlog.pushLog(details, AhimsaLog.normal);
+
                     ahimwall.dropTx(txid, lower_height);
+                    updatedBulletin();
                     break;
                 }
                 Log.d(TAG, "set highest block " + lower_height.toString());
@@ -514,6 +554,10 @@ public class AhimsaService extends IntentService
         }
         catch (Exception e)
         {
+            String words = getString(R.string.fail_confirm_tx);
+            String details = String.format(words, e.getMessage());
+            ahimlog.pushLog( details, AhimsaLog.error );
+
             e.printStackTrace();
         }
     }

@@ -22,7 +22,6 @@ import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
-import io.ahimsa.ahimsa_app.core.AhimsaService;
 
 public class AhimsaActivity extends Activity {
 
@@ -31,6 +30,8 @@ public class AhimsaActivity extends Activity {
     ViewPager pager;
     MyPagerAdapter mypager;
     PagerSlidingTabStrip tabs;
+
+    private static final int RESULT_SETTINGS = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -196,8 +197,11 @@ public class AhimsaActivity extends Activity {
         int id = item.getItemId();
         if (id == R.id.action_settings)
         {
-            AhimsaService.startResetAhimsaWallet(this);
+//            AhimsaService.startResetAhimsaWallet(this);
 //            AhimsaService.startSyncBlockChain(this);
+            Intent i = new Intent(this, SettingsActivity.class);
+            startActivityForResult(i, RESULT_SETTINGS);
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
             return true;
         }
         else if (id == R.id.action_create_bulletin)
@@ -208,5 +212,17 @@ public class AhimsaActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case RESULT_SETTINGS:
+                break;
+
+        }
+
     }
 }

@@ -11,6 +11,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
@@ -30,7 +31,6 @@ public class CreateBulletinActivity extends Activity
     @Override
     public void onPause()
     {
-        Log.d("CB", "ONPAUSE");
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         super.onPause();
     }
@@ -114,6 +114,7 @@ public class CreateBulletinActivity extends Activity
             if(Constants.getMinCoinNecessary() <= ahimwall.getConfirmedBalance(false))
             {
                 AhimsaService.startBroadcastBulletin(this, topic, message, Constants.MIN_FEE);
+                Toast.makeText(this, "Broadcast bulletin request.\ntopic: " + topic + "\nestimated cost: " + estimate + " Satoshis", Toast.LENGTH_LONG).show();
                 finish();
             }
             else

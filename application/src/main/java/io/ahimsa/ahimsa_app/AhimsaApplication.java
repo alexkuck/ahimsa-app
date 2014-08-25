@@ -123,7 +123,6 @@ public class AhimsaApplication extends Application
                 {
                     final InputStream checkpointsInputStream = getAssets().open(Constants.CHECKPOINTS_FILENAME);
                     CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream, store, earliestKeyCreationTime);
-                    Log.d(TAG, "STEP 3");
                 }
                 catch (final IOException x)
                 {
@@ -144,7 +143,6 @@ public class AhimsaApplication extends Application
         try
         {
             chain = new BlockChain(Constants.NETWORK_PARAMETERS, store);
-            Log.d(TAG, "STEP 4");
             return true;
         }
         catch (BlockStoreException e)

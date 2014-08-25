@@ -1,6 +1,8 @@
 package io.ahimsa.ahimsa_app.ui;
 
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -63,6 +65,7 @@ public class OverviewFragment extends Fragment
                         {
                             Long height = new Long( heightEditText.getText().toString() );
                             AhimsaService.startImportBlock(getActivity(), height);
+                            Toast.makeText(getActivity(), "Import block request.\nheight: " + height, Toast.LENGTH_LONG).show();
                         }
                         catch(Exception e)
                         {
@@ -104,6 +107,20 @@ public class OverviewFragment extends Fragment
             public void onClick(View V)
             {
                 FundService.startRequestFundingTxUseConfig(getActivity());
+                Toast.makeText(getActivity(), "Requested funding transaction.", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        final TextView full_address_value = (TextView) v.findViewById(R.id.full_address_value);
+        full_address_value.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(getActivity().CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("ahimsa-app address", full_address_value.getText());
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(getActivity(), "Copied device address to clipboard", Toast.LENGTH_SHORT).show();
             }
         });
 

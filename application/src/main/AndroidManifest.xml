@@ -48,6 +48,12 @@
                 android:value="MainActivity" />
         </activity>
 
+        <activity
+            android:name="io.ahimsa.ahimsa_app.ui.SettingsActivity"
+            android:parentActivityName="io.ahimsa.ahimsa_app.ui.AhimsaActivity"
+            android:label="Settings" >
+        </activity>
+
         <service
             android:name="io.ahimsa.ahimsa_app.core.AhimsaService"
             android:enabled="true"
@@ -59,10 +65,7 @@
             android:exported="false" >
         </service>
 
-        <activity
-            android:name="io.ahimsa.ahimsa_app.ui.SettingsActivity2"
-            android:label="@string/title_activity_settings_activity2" >
-        </activity>
+
     </application>
 
 </manifest>

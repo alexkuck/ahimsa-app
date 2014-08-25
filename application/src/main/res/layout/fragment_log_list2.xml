@@ -10,7 +10,8 @@
               android:layout_weight="1"
               android:drawSelectorOnTop="false"
               android:divider="@null"
-              android:dividerHeight="0dp"/>
+              android:dividerHeight="0dp"
+              android:scrollbarStyle="outsideOverlay"/>
 
     <TextView android:id="@id/android:empty"
               android:layout_width="fill_parent"

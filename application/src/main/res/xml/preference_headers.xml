@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <PreferenceCategory android:title="Bitcoin Node" >
+        <EditTextPreference
+            android:title="Trusted Peer"
+            android:summary="IP or hostname of single peer to connect to." />
+
+        <CheckBoxPreference
+            android:title="Sync on Startup"
+            android:summary="Download the block chain on startup"
+            android:defaultValue="false"/>
+
+    </PreferenceCategory>
+
+
+    <PreferenceCategory android:title="External">
+        <EditTextPreference
+            android:title="ahimsa-web Hostname"
+            android:summary="Default ahimsa-web server"/>
+
+        <EditTextPreference
+            android:title="Funding Hostname"
+            android:summary="Request a transaction to fund device address"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About">
+        <Preference
+            android:title="Source Code"
+            android:summary="http://github.com/askuck/ahimsa-app">
+        </Preference>
+        <Preference
+            android:title="Open Source Licenses">
+        </Preference>
+
+    </PreferenceCategory>
+
+
+</PreferenceScreen>

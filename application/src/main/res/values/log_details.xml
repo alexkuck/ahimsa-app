@@ -9,23 +9,30 @@
     <string name="import_block">        Import Block                     </string>
     <string name="confirm_tx">          Confirm Transaction              </string>
 
-    <string name="to_queue">            " request"                       </string>
+    <string name="start">               "Start "                         </string>
+    <string name="to_queue">            " Request"                       </string>
 
 
-    <string name="success_broadcast_bulletin">  Successful broadcast of bulletin\ntopic: %1$s\ntxid: %2$s</string>
-    <string name="fail_broadcast_bulletin">     Unsuccessful broadcast of bulletin\nerror: %1$s\ntxid: %2$s</string>
+    <string name="success_broadcast_bulletin">  Successful Broadcast of Bulletin\ntopic: %1$s\ntxid: %2$s              </string>
+    <string name="fail_broadcast_bulletin">     Unsuccessful Broadcast of Bulletin\nerror: %1$s\ntxid: %2$s            </string>
 
-    <string name="start_sync_block_chain">      Starting download of block chain\nbegin height: %1$s            </string>
-    <string name="finish_sync_block_chain">     Finished download of block chain\nend height: %1$s            </string>
-    <string name="fail_sync_block_chain">       Unsuccessful download of block chain\nerror: %1$s      </string>
+    <string name="start_sync_block_chain">      Starting Download of Block Chain\nbegin height: %1$s                   </string>
+    <string name="finish_sync_block_chain">     Finished Download of Block Chain\nend height: %1$s                     </string>
+    <string name="fail_sync_block_chain">       Unsuccessful Download of Block Chain\nerror: %1$s                      </string>
 
-    <string name="success_broadcast_tx">        Successful broadcast of transaction\ntxid: %1$s         </string>
-    <string name="fail_broadcast_tx">           Unsuccessful broadcast of transaction\ntxid: %1$s       </string>
+    <string name="success_broadcast_tx">        Successful Broadcast of Transaction\ntxid: %1$s                        </string>
+    <string name="fail_broadcast_tx">           Unsuccessful Broadcast of Transaction\ntxid: %1$s                      </string>
 
-    <string name="fail_to_import">              Unsuccessful import of block\nerror: %1$s           </string>
-    <string name="found_relevant_txs">          Found %1$s relevant transactions in block %2$s      </string>
+    <string name="fail_to_import">              Unsuccessful Import of Block\nerror: %1$s                              </string>
+    <string name="found_relevant_txs">          Results of block inspection:\nblock: %1$s\nrelevant transactions: %2$s </string>
+    <string name="import_exceeds_network">      Requested block exceeds network chain head                             </string>
 
-    <string name="confirmd_tx">                 Confirmed transaction</string>
+    <string name="confirmed_tx">                Confirmed Transaction\ntxid: %1$s                                      </string>
+    <string name="tx_bundle_null">              Transaction bundle from AhimsaWallet was null\ntxid: %1$s              </string>
+    <string name="tx_already_confirmed">        Transaction is already confirmed\ntxid: %1$s                           </string>
+    <string name="sequential_hashes_null">      Sequential hashes returned null\ntxid: %1$s                            </string>
+    <string name="fail_confirm_tx">             Unsuccessful Confirmation\nerror: %1$s\ntxid: %2$s                     </string>
+    <string name="dropped_tx">                  Dropped transaction\ntxid: %1$s                                        </string>
 
 
 </resources>
