@@ -38,8 +38,6 @@ public class Constants {
 
 
 
-
-
     public static final String AHIMSA_FUND = "https://ahimsa.io:1050";
     public static final String ROBINHOOD_FUND = "https://24.125.163.221:1050";
 

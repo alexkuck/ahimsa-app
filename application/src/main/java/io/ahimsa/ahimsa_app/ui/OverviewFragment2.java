@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,9 +26,9 @@ import io.ahimsa.ahimsa_app.fund.FundService;
 import io.ahimsa.ahimsa_app.util.Qr;
 
 
-public class OverviewFragment extends Fragment
+public class OverviewFragment2 extends Fragment
 {
-    public OverviewFragment()
+    public OverviewFragment2()
     {
         // Empty constructor
     }
@@ -201,9 +200,9 @@ public class OverviewFragment extends Fragment
         }
     }
 
-    public static OverviewFragment newInstance(Bundle args)
+    public static OverviewFragment2 newInstance(Bundle args)
     {
-        OverviewFragment frag = new OverviewFragment();
+        OverviewFragment2 frag = new OverviewFragment2();
         frag.setArguments(args);
         return frag;
     }

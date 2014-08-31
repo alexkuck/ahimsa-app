@@ -119,7 +119,7 @@ public class AhimsaActivity extends Activity {
                             mPageReferences.put(index, frag0);
                             return frag0;
 
-                case 1:     OverviewFragment frag1 = OverviewFragment.newInstance(application.getUpdateBundle());
+                case 1:     OverviewFragment3 frag1 = OverviewFragment3.newInstance(application.getUpdateBundle());
                             mPageReferences.put(index, frag1);
                             return frag1;
 
@@ -140,15 +140,6 @@ public class AhimsaActivity extends Activity {
             return mPageReferences.get(key);
         }
 
-        public void updateOverview()
-        {
-            OverviewFragment overview_frag = (OverviewFragment) getFragment( 1 );
-            if(overview_frag != null)
-            {
-                overview_frag.updateView(application.getUpdateBundle());
-            }
-        }
-
         public void updateQueue()
         {
             QueueListFragment log_frag = (QueueListFragment) getFragment(0);
@@ -164,6 +155,15 @@ public class AhimsaActivity extends Activity {
             if(log_frag != null)
             {
                 log_frag.updateView(application.getAhimsaLog().getLog());
+            }
+        }
+
+        public void updateOverview()
+        {
+            OverviewFragment3 overview_frag = (OverviewFragment3) getFragment( 1 );
+            if(overview_frag != null)
+            {
+                overview_frag.updateView(application.getUpdateBundle());
             }
         }
 
