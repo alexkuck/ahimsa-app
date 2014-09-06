@@ -15,33 +15,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
+        android:typeface="monospace"
+        android:textColor="#00b0b0"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
-
-    <View
-        android:id="@+id/address_seperator"
-        android:layout_width="1dip"
-        android:layout_height="1dip"
-        android:layout_marginLeft="3dp"
-        android:layout_marginRight="3dp"
-        android:background="#b0b0b0"
-        android:layout_alignTop="@+id/address_value"
-        android:layout_alignBottom="@+id/address_value"
-        android:layout_toRightOf="@+id/address_value"
-        />
-
-    <TextView
-        android:id="@+id/checksum_value"
-        android:text="checksum"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/address_seperator"
-        android:layout_toRightOf="@+id/address_seperator"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textStyle="bold"
-        android:textColor="#00b0b0"
-        />
 
     <TextView
         android:layout_width="wrap_content"
@@ -110,7 +88,7 @@
         android:paddingRight="5dp"
         android:id="@+id/topic_edit_text"
         android:hint="Topic"
-        android:maxLength="15"
+        android:maxLength="50"
         android:singleLine="true"
         android:layout_below="@+id/address_value"
         android:layout_alignParentLeft="true"

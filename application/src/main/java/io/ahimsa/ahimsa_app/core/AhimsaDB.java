@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.google.bitcoin.core.Coin;
 import com.google.bitcoin.core.Transaction;
+import com.google.bitcoin.core.TransactionOutPoint;
 import com.google.bitcoin.core.TransactionOutput;
 
 import java.util.ArrayList;
@@ -252,50 +253,53 @@ public class AhimsaDB
         db.update(db_table_txouts, param, where, null);
     }
 
-    public List<TransactionOutput> getUnspentOutputs(Long min_coin_necessary)
+    //----------------------------------------------------
+    public List<TransactionOutPoint> getUnspentOutPoints(Long min_coin_necessary)
     {
         //get unspent transactions sorted in descending order
-        List<TransactionOutput> db_unspent = getAllUnspentOutputs();
+        List<TransactionOutPoint> db_unspent = getAllUnspentOutPoints();
         Coin min = Coin.valueOf( min_coin_necessary );
 
-        ArrayList<TransactionOutput> unspents = new ArrayList<TransactionOutput>();
+        ArrayList<TransactionOutPoint> unspents = new ArrayList<TransactionOutPoint>();
         Coin bal = Coin.ZERO;
 
-        for(TransactionOutput out : db_unspent)
+        for(TransactionOutPoint outpoint : db_unspent)
         {
             if(bal.compareTo(min) >= 0)
                 break;
 
-            unspents.add(out);
-            bal = bal.add(out.getValue());
+            unspents.add(outpoint);
+            bal = bal.add(outpoint.getConnectedOutput().getValue());
         }
 
         return unspents;
     }
 
-    //----------------------------------------------------
     // TODO MAJOR: clean this up.......
-    public List<TransactionOutput> getAllUnspentOutputs()
+    public List<TransactionOutPoint> getAllUnspentOutPoints()
     {
         //return all confirmed and unspent/pending transaction outputs in descending order by value
 
-        String sql = "SELECT txouts.raw, transactions.raw FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
+        String sql = "SELECT txouts.vout, transactions.raw FROM txouts JOIN transactions ON transactions.txid == txouts.txid " +
                 "WHERE transactions.confirmed == 1 AND (txouts.status == 'unspent' OR txouts.status == 'pending') ORDER BY txouts.value DESC;";
 
         Cursor cursor = db.rawQuery(sql, null);
-        Log.d("DB", "***getAllUnspentOutputs()***");
-        Log.d("DB", cursor.toString());
-        ArrayList<TransactionOutput> result = new ArrayList<TransactionOutput>();
+        ArrayList<TransactionOutPoint> result = new ArrayList<TransactionOutPoint>();
 
         while(cursor.moveToNext())
         {
-            Transaction txFromDb = new Transaction(Constants.NETWORK_PARAMETERS, cursor.getBlob(1));
-            result.add( new TransactionOutput(Constants.NETWORK_PARAMETERS, txFromDb, cursor.getBlob(0), 0));
+            int vout = cursor.getInt(0);
+            byte[] raw_tx = cursor.getBlob(1);
+
+            Transaction parent_tx = new Transaction(Constants.NETWORK_PARAMETERS, cursor.getBlob(1));
+            TransactionOutPoint outpoint = new TransactionOutPoint(Constants.NETWORK_PARAMETERS, vout, parent_tx);
+            result.add( outpoint );
         }
 
         return result;
     }
 
+    //----------------------------------------------------------------------------------------------
     public Long getConfirmedBalance(boolean only_pending)
     {
         String SUM;
@@ -389,8 +393,8 @@ public class AhimsaDB
         }
 
         Cursor cursor = db.rawQuery(sql, null);
-        Log.d("DB", "***getConfirmedAndUnspentTxOuts()***");
-        Log.d("DB", cursor.toString());
+        Log.d("DB", "getConfirmedAndUnspentTxOuts() is being called twice");
+
         return cursor;
     }
 
@@ -421,6 +425,13 @@ public class AhimsaDB
 
         Cursor cursor = db.rawQuery(sql, null);
         return cursor;
+    }
+
+    public Cursor getTxOutPointCursor()
+    {
+        String sql = "SELECT txouts.txid, txouts.vout, txouts.value, transactions.confirmed FROM txouts " +
+                "JOIN transactions ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent'";
+        return db.rawQuery(sql, null);
     }
 
     //----------------------------------------------------------------------------------------------

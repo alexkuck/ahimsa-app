@@ -48,7 +48,7 @@ public class Constants {
 
     public static final Long MIN_DUST = new Long(546);
     public static final Long MIN_FEE = new Long(10000);
-    public static final Long getMinCoinNecessary(){
+    public static final Long getStandardCoin(){
         return Constants.MIN_FEE + Constants.MIN_DUST*((Constants.MAX_TOPIC_LEN + Constants.MAX_MESSAGE_LEN + Constants.CHAR_PER_OUT - 1) / Constants.CHAR_PER_OUT);
     }
 

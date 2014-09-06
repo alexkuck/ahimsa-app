@@ -156,7 +156,7 @@ public class OverviewFragment2 extends Fragment
             final TextView bulletin_estimate = (TextView) v.findViewById(R.id.bulletin_estimate_value);
             final TextView character_estimate = (TextView) v.findViewById(R.id.character_estimate_value);
 
-            Long est_bulletins = new Long(avail_bal) / Constants.getMinCoinNecessary();
+            Long est_bulletins = new Long(avail_bal) / Constants.getStandardCoin();
             Long est_char = est_bulletins*(Constants.MAX_TOPIC_LEN + Constants.MAX_MESSAGE_LEN);
 
             bulletin_estimate.setText(est_bulletins.toString());

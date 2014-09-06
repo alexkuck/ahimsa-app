@@ -2,13 +2,11 @@ package io.ahimsa.ahimsa_app.core;
 
 import android.util.Log;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
 import com.google.bitcoin.core.Coin;
 import com.google.bitcoin.core.ECKey;
-import com.google.bitcoin.core.Wallet;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionOutPoint;
 import com.google.bitcoin.core.TransactionInput;
@@ -16,9 +14,7 @@ import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.Transaction.SigHash;
 import com.google.bitcoin.wallet.BasicKeyChain;
-import com.google.bitcoin.wallet.KeyBag;
 
-import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.core.WireBulletinProtos.WireBulletin;
 
@@ -26,37 +22,16 @@ import io.ahimsa.ahimsa_app.core.WireBulletinProtos.WireBulletin;
 public class BulletinBuilder
 {
 
-    private static void addInputs(Transaction tx, List<TransactionOutput> unspents)
+    private static void addInputs(Transaction tx, List<TransactionOutPoint> unspents)
     {
-        for(TransactionOutput out : unspents)
+        for(TransactionOutPoint outpoint : unspents)
         {
-            TransactionOutPoint outpoint = new TransactionOutPoint(Constants.NETWORK_PARAMETERS, indexOf(out), out.getParentTransaction());
             tx.addInput(new TransactionInput(Constants.NETWORK_PARAMETERS, tx, new byte[]{}, outpoint));
         }
     }
 
-    private static int indexOf(TransactionOutput out)
-    {
-        Transaction parent = out.getParentTransaction();
-        for(int i = 0; i < parent.getOutputs().size(); i++)
-        {
-            if(Arrays.equals(out.bitcoinSerialize(), parent.getOutput(i).bitcoinSerialize()))
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-
     private static void addBulletinOutputs(Transaction tx, String topic, String message)
     {
-        // Verify topic + message length is valid
-        if (topic.length() + message.length() > Constants.MAX_MESSAGE_LEN)
-        {
-            throw new Error("MESSAGE LENGTH OVER 500-0000000000000");
-        }
-
         // Create protocol buffer builder and set values
         WireBulletin.Builder protobuilder = WireBulletin.newBuilder();
         protobuilder.setVersion(1);
@@ -106,7 +81,7 @@ public class BulletinBuilder
 
     }
 
-    private static void addChangeOutput(ECKey key, Transaction tx, List<TransactionOutput> unspents) throws Exception
+    private static void addChangeOutput(ECKey key, Transaction tx, List<TransactionOutPoint> unspents) throws Exception
     {
         Coin fee        = Coin.valueOf(Constants.MIN_FEE);
         Coin in_coin    = totalInCoin(unspents);
@@ -129,7 +104,7 @@ public class BulletinBuilder
                 throw new Exception("out_coin + fee exceeds in_coin | " + total.toString());
         }
 
-        Coin min = Coin.valueOf( Constants.getMinCoinNecessary() );
+        Coin min = Coin.valueOf( Constants.getStandardCoin() );
         Address default_addr = key.toAddress(Constants.NETWORK_PARAMETERS);
 
         while(total.compareTo(Coin.ZERO) == 1)
@@ -147,12 +122,12 @@ public class BulletinBuilder
         }
     }
 
-    private static Coin totalInCoin(List<TransactionOutput> db_unspent)
+    private static Coin totalInCoin(List<TransactionOutPoint> db_unspent)
     {
         Coin in_coin = Coin.ZERO;
-        for(TransactionOutput out : db_unspent)
+        for(TransactionOutPoint output : db_unspent)
         {
-            in_coin = in_coin.add(out.getValue());
+            in_coin = in_coin.add(output.getConnectedOutput().getValue());
         }
         return in_coin;
     }
@@ -168,7 +143,7 @@ public class BulletinBuilder
     }
 
     //----------------------------------------------------------------------------------------------
-    public static Transaction createTx(ECKey key, List<TransactionOutput> unspents, String topic, String message) throws Exception
+    public static Transaction createTx(ECKey key, List<TransactionOutPoint> unspents, String topic, String message) throws Exception
     {
         //create new transaction
         Transaction bulletin = new Transaction(Constants.NETWORK_PARAMETERS);

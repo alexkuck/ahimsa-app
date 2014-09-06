@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +23,7 @@ import io.ahimsa.ahimsa_app.AhimsaApplication;
 import io.ahimsa.ahimsa_app.Configuration;
 import io.ahimsa.ahimsa_app.Constants;
 import io.ahimsa.ahimsa_app.R;
+import io.ahimsa.ahimsa_app.core.AhimsaService;
 
 public class AhimsaActivity extends Activity {
 
@@ -68,6 +70,7 @@ public class AhimsaActivity extends Activity {
             String action = intent.getAction();
             if(Constants.ACTION_UPDATED_OVERVIEW.equals(action))
             {
+                Log.d("AA", "updatedOverview(), context: " + context.toString());
                 mypager.updateOverview();
             }
             else if(Constants.ACTION_UPDATED_QUEUE.equals(action))

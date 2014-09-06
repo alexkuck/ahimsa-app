@@ -114,9 +114,6 @@ public class CreateBulletinFragment extends Fragment {
             final TextView confirmed_value = (TextView) v.findViewById(R.id.confirmed_balance_value);
             confirmed_value.setText( Utils.commarizer(confirmed_balance.toString()) );
 
-
-            final TextView checksum_value = (TextView) v.findViewById(R.id.checksum_value);
-            checksum_value.setText(address.substring(address.length()-4));
         }
     }
 

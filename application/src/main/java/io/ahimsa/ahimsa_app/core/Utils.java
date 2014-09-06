@@ -42,6 +42,12 @@ public class Utils {
         return new String(hexChars);
     }
 
+    public static Long characterEstimator(Long satoshis)
+    {
+        Long result = satoshis / Constants.MIN_DUST * Constants.CHAR_PER_OUT;
+        return result - (result % 200);
+    }
+
     public static String commarizer(String number)
     {
         return number.replaceAll(Constants.COMMA_REGEX_1, Constants.COMMA_REGEX_2);

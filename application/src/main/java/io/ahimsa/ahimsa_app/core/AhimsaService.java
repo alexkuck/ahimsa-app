@@ -336,6 +336,12 @@ public class AhimsaService extends IntentService
         {
             // insufficient funds
             e.printStackTrace();
+
+            String words = getString(R.string.fail_broadcast_bulletin);
+//                String abbreviated_txid = Utils.abbreviator(bulletin.getHashAsString(), 15);
+//                String details = String.format(words, e.getMessage(), abbreviated_txid);
+            String details = String.format(words, e.getMessage(), "no txid");
+            ahimlog.pushLog( details, AhimsaLog.error );
         }
 
         if(bulletin != null)
@@ -406,6 +412,7 @@ public class AhimsaService extends IntentService
             String before_details = String.format(before_words, application.getBlockChain().getBestChainHeight() );
             ahimlog.pushLog( before_details, AhimsaLog.normal );
 
+            updatedLog();
             node.downloadBlockChain();
 
             String after_words = getString(R.string.finish_sync_block_chain);
@@ -419,7 +426,7 @@ public class AhimsaService extends IntentService
             String details = String.format(words, e.getMessage());
             ahimlog.pushLog( details, AhimsaLog.error );
         }
-
+        updatedLog();
     }
 
     private void handleImportBlock(Long import_height)

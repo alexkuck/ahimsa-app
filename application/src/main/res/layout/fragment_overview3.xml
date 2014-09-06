@@ -88,7 +88,7 @@
             android:gravity="center">
 
             <TextView
-                android:id="@+id/char_count_value"
+                android:id="@+id/character_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="35dp"
@@ -101,7 +101,7 @@
                 android:layout_height="wrap_content"
                 android:text="Characters"
                 android:gravity="center_horizontal"
-                android:layout_below="@+id/char_count_value"
+                android:layout_below="@+id/character_value"
                 android:layout_centerHorizontal="true" />
 
         </RelativeLayout>
@@ -115,22 +115,24 @@
         android:background="#b0b0b0"
         android:id="@+id/horizontal_line_1"></View>
 
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="160dp"></ListView>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:layout_marginTop="160dp"
         android:background="#b0b0b0"
         android:layout_below="@+id/wallet_layout"
         android:id="@+id/horizontal_line_2"></View>
 
     <Button
-        android:id="@+id/search_button"
+        android:id="@+id/search_for_funds_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         style="?android:attr/buttonStyleSmall"
         android:background="?android:attr/selectableItemBackground"
-        android:text="Search for Funds"/>
+        android:text="Search Block for Funds"/>
 
     <View
         android:layout_width="match_parent"

@@ -8,6 +8,7 @@ import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.ScriptException;
 import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.core.TransactionInput;
+import com.google.bitcoin.core.TransactionOutPoint;
 import com.google.bitcoin.core.TransactionOutput;
 import com.google.bitcoin.script.Script;
 import java.util.Arrays;
@@ -39,12 +40,12 @@ public class AhimsaWallet {
         // implement cost_estimation instead of flat max rate?
         // Long estimate_cost = Utils.getEstimatedCost(fee, config.getDustValue(), topic.length(), message.length());
 
-        db.reserveTxOuts(Constants.getMinCoinNecessary());
+        db.reserveTxOuts(Constants.getStandardCoin());
     }
 
     public void unreserveTxOuts()
     {
-        db.unreserveTxOuts(Constants.getMinCoinNecessary());
+        db.unreserveTxOuts(Constants.getStandardCoin());
     }
 
     public void removeAllReservations()
@@ -59,6 +60,7 @@ public class AhimsaWallet {
         if(topic == null || topic.equals("") )
         {
             // Ensure topic and message content is proper
+            //todo remove this
             topic = Constants.DEFAULT_TOPIC;
         }
 
@@ -68,7 +70,8 @@ public class AhimsaWallet {
         }
 
         // Get the right amount of unspent transaction outputs to spend from
-        List<TransactionOutput> unspents = db.getUnspentOutputs(Constants.getMinCoinNecessary());
+        List<TransactionOutPoint> unspents = db.getUnspentOutPoints(Constants.getStandardCoin());
+        Log.d(TAG, "UNSPENT.TOSTRING() from CREATEANDADDBULLETIN()");
         Log.d(TAG, unspents.toString());
 
         // Create a bulletin using system's configuration file, a bitcoinj wallet, the unspent
@@ -125,7 +128,7 @@ public class AhimsaWallet {
             // Spent an unreserved txout, must remove a reserved txout.
             if (unreserve_required)
             {
-                db.unreserveTxOuts(Constants.getMinCoinNecessary());
+                db.unreserveTxOuts(Constants.getStandardCoin());
             }
 
         }
@@ -256,9 +259,9 @@ public class AhimsaWallet {
 
     public void toLog(){
 
-        Log.d(TAG, "========================");
-        db.getBulletinCursor();
-        Log.d(TAG, "========================");
+//        Log.d(TAG, "========================");
+//        db.getBulletinCursor();
+//        Log.d(TAG, "========================");
 
         String ahimwall_to_string = toString();
 
