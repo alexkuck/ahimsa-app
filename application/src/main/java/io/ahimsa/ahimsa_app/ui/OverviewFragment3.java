@@ -2,6 +2,8 @@ package io.ahimsa.ahimsa_app.ui;
 
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -9,7 +11,6 @@ import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +39,6 @@ public class OverviewFragment3 extends Fragment {
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
         View v = inflater.inflate(R.layout.fragment_overview3, container, false);
-        updateView(v, getArguments());
 
         Button importBlockButton = (Button) v.findViewById(R.id.search_for_funds_button);
         // todo | window leaked error on screen rotation
@@ -99,16 +100,37 @@ public class OverviewFragment3 extends Fragment {
             }
         });
 
+        final TextView address_value = (TextView) v.findViewById(R.id.address_value);
+        address_value.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(getActivity().CLIPBOARD_SERVICE);
+                String address = getArguments().getString(Constants.EXTRA_STRING_ADDRESS);
+                ClipData clip = ClipData.newPlainText("ahimsa-app address", address);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(getActivity(), "Copied device address to clipboard", Toast.LENGTH_SHORT).show();
+            }
+        });
 
+
+        // todo: wish i didn't have to make this class specific.. possibly use a list fragment?
+        ListView outpoint_list = (ListView) v.findViewById(R.id.outpoint_list);
+        AhimsaActivity activity = (AhimsaActivity) getActivity();
+        OutPointCursorAdapter outpoint_adapter = new OutPointCursorAdapter(getActivity(), R.layout.listview_item_outpoint, activity.getOutPointCursor(), -1);
+        outpoint_list.setAdapter( outpoint_adapter );
+
+        updateView(inflater, v, getArguments());
         return v;
     }
 
-    public void updateView(Bundle args)
+    public void updateView(LayoutInflater inflater, Bundle args)
     {
-        updateView(getView(), args);
+        updateView(inflater, getView(), args);
     }
 
-    protected void updateView(View v, Bundle args)
+    protected void updateView(LayoutInflater inflater, View v, Bundle args)
     {
         if (v != null)
         {
@@ -133,7 +155,12 @@ public class OverviewFragment3 extends Fragment {
             final TextView character_value = (TextView) v.findViewById(R.id.character_value);
             character_value.setText( "~" + Utils.commarizer(Utils.characterEstimator(avail_bal).toString()) );
 
-
+            ListView outpoint_list = (ListView) v.findViewById(R.id.outpoint_list);
+//            View header = inflater.inflate(R.layout.listview_item_outpoint_header, null);
+//            outpoint_list.addHeaderView(header);
+            OutPointCursorAdapter outpoint_cursor = (OutPointCursorAdapter) outpoint_list.getAdapter();
+            AhimsaActivity activity = (AhimsaActivity) getActivity();
+            outpoint_cursor.swapCursor( activity.getOutPointCursor() );
 
         }
     }

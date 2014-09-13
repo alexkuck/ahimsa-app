@@ -10,10 +10,8 @@ import android.view.ViewGroup;
 import io.ahimsa.ahimsa_app.R;
 
 
-public class BulletinListFragment extends ListFragment {
-
-
-
+public class BulletinListFragment extends ListFragment
+{
     public BulletinListFragment()
     {
         // Required empty public constructor

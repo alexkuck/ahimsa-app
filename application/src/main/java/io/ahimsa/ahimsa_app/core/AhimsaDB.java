@@ -427,10 +427,11 @@ public class AhimsaDB
         return cursor;
     }
 
-    public Cursor getTxOutPointCursor()
+    public Cursor getOutPointCursor()
     {
-        String sql = "SELECT txouts.txid, txouts.vout, txouts.value, transactions.confirmed FROM txouts " +
-                "JOIN transactions ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent'";
+        String sql = "SELECT txouts.rowid _id, txouts.txid, txouts.vout, txouts.value, transactions.confirmed FROM txouts " +
+                "JOIN transactions ON transactions.txid == txouts.txid WHERE txouts.status == 'unspent'" +
+                "ORDER BY transactions.sent_time DESC;";
         return db.rawQuery(sql, null);
     }
 

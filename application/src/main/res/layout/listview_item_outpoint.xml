@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:paddingTop="4dp"
+              android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/outpoint_txid"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="deadbeafdeadbeafdeadbeaf"
+        android:singleLine="true"
+        android:typeface="monospace"
+        android:layout_weight="2"/>
+
+    <TextView
+        android:id="@+id/outpoint_vout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:typeface="monospace"
+        android:text="1"
+        android:gravity="center"
+        android:layout_weight="1"/>
+
+    <TextView
+        android:id="@+id/outpoint_coin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textStyle="bold|italic"
+        android:text="26090"
+        android:layout_weight="1"
+        android:gravity="right"/>
+
+</LinearLayout>

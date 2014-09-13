@@ -251,6 +251,11 @@ public class AhimsaWallet {
         return db.getBulletinCursor();
     }
 
+    public Cursor getOutPointCursor()
+    {
+        return db.getOutPointCursor();
+    }
+
     //----------------------------------------------------------------------------------------------
     public void resetDB()
     {

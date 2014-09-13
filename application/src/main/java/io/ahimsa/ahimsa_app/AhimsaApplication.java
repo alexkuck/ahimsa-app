@@ -105,6 +105,11 @@ public class AhimsaApplication extends Application
         return ahimwall.getBulletinCursor();
     }
 
+    public Cursor getOutPointCursor()
+    {
+        return ahimwall.getOutPointCursor();
+    }
+
     // Load Block Chain-----------------------------------------------------------------------------
     private boolean loadBlockChain()
     {

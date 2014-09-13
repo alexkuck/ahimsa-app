@@ -63,6 +63,5 @@ public class LogCursorAdapter extends ResourceCursorAdapter
         {
             vertical_color.setBackgroundColor( Color.rgb(194, 0, 48) );
         }
-
     }
 }

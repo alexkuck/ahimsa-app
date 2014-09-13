@@ -7,9 +7,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -166,7 +168,7 @@ public class AhimsaActivity extends Activity {
             OverviewFragment3 overview_frag = (OverviewFragment3) getFragment( 1 );
             if(overview_frag != null)
             {
-                overview_frag.updateView(application.getUpdateBundle());
+                overview_frag.updateView(getLayoutInflater(), application.getUpdateBundle());
             }
         }
 
@@ -227,5 +229,10 @@ public class AhimsaActivity extends Activity {
 
         }
 
+    }
+
+    public Cursor getOutPointCursor()
+    {
+        return application.getOutPointCursor();
     }
 }

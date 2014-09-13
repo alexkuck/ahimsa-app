@@ -69,7 +69,8 @@
                 android:textSize="35dp"
                 android:text="552,523"
                 android:layout_alignParentTop="true"
-                android:layout_centerHorizontal="true"/>
+                android:layout_centerHorizontal="true"
+                android:singleLine="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -94,7 +95,8 @@
                 android:textSize="35dp"
                 android:text="~2,000"
                 android:layout_alignParentTop="true"
-                android:layout_centerHorizontal="true" />
+                android:layout_centerHorizontal="true"
+                android:singleLine="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -116,8 +118,13 @@
         android:id="@+id/horizontal_line_1"></View>
 
     <ListView
+        android:id="@+id/outpoint_list"
         android:layout_width="match_parent"
-        android:layout_height="160dp"></ListView>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:scrollbarStyle="outsideInset"></ListView>
 
     <View
         android:layout_width="match_parent"
@@ -132,13 +139,15 @@
         android:layout_height="wrap_content"
         style="?android:attr/buttonStyleSmall"
         android:background="?android:attr/selectableItemBackground"
-        android:text="Search Block for Funds"/>
+        android:text="Search for Funds"/>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
+        android:layout_marginBottom="75dp"
         android:background="#b0b0b0"
         android:id="@+id/horizontal_line_3"></View>
+
 
 
 
