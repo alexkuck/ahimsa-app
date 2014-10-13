@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
@@ -126,6 +127,28 @@ public class CreateBulletinActivity extends Activity
                 dialog.show();
             }
             return true;
+        }
+
+        if (id == R.id.action_camera)
+        {
+            // This intent presents applications that allow the user to choose a picture
+            Intent pickIntent = new Intent();
+            pickIntent.setType("image/*");
+            pickIntent.setAction(Intent.ACTION_GET_CONTENT);
+
+            // This intent launches the camera application to take a new picture
+            Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            // This intent prompts the user to choose from a list of possible intents.
+            String pickTitle = "Select or Take a new Picture";
+            Intent chooserIntent = Intent.createChooser(pickIntent, pickTitle);
+            chooserIntent.putExtra
+                    (
+                            Intent.EXTRA_INITIAL_INTENTS,
+                            new Intent[] { takePhotoIntent }
+                    );
+
+            startActivityForResult(chooserIntent, 123);
         }
 
         return super.onOptionsItemSelected(item);

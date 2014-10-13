@@ -89,7 +89,7 @@ public class BulletinCursorAdapter extends ResourceCursorAdapter
             @Override
             public void onClick(View view)
             {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://ahimsa.io" + ":5000/bulletin/" + view.getTag().toString()));
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://ahimsa.io" + "/bulletin/" + view.getTag().toString()));
                 context.startActivity(browserIntent);
             }
         });

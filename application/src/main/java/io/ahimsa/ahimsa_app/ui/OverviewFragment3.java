@@ -28,7 +28,9 @@ import io.ahimsa.ahimsa_app.core.AhimsaService;
 import io.ahimsa.ahimsa_app.core.Utils;
 import io.ahimsa.ahimsa_app.util.Qr;
 
-public class OverviewFragment3 extends Fragment {
+public class OverviewFragment3 extends Fragment
+{
+    private Bitmap qrCodeBitmap;
 
     public OverviewFragment3()
     {
@@ -137,16 +139,26 @@ public class OverviewFragment3 extends Fragment {
             TextView address_value = (TextView) v.findViewById(R.id.address_value);
             String address = args.getString(Constants.EXTRA_STRING_ADDRESS);
             StringBuilder two_line_address = new StringBuilder(address);
-            two_line_address.insert(two_line_address.length() / 2, "\n");
+            two_line_address.insert(12, "\n");
+            two_line_address.insert(25, "\n");
 
             final SpannableStringBuilder sb = new SpannableStringBuilder(two_line_address);
             final ForegroundColorSpan fcs = new ForegroundColorSpan(Color.rgb(0, 176, 176));
             sb.setSpan(fcs, 1, 9, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             address_value.setText(sb);
 
-            final Bitmap qr_address = Qr.bitmap(address, 135);
+            int size = (int) (256 * getResources().getDisplayMetrics().density);
+            qrCodeBitmap = Qr.bitmap(address, size);
             ImageView qr_view = (ImageView) v.findViewById(R.id.qr_value);
-            qr_view.setImageBitmap(qr_address);
+            qr_view.setImageBitmap(qrCodeBitmap);
+            qr_view.setOnClickListener( new View.OnClickListener()
+            {
+                @Override
+                public void onClick(View view)
+                {
+                    handleShowQRCode();
+                }
+            });
 
             final TextView wallet_value = (TextView) v.findViewById(R.id.wallet_value);
             Long avail_bal = new Long(args.getLong(Constants.EXTRA_LONG_AVAILABLE_BAL));
@@ -163,6 +175,11 @@ public class OverviewFragment3 extends Fragment {
             outpoint_cursor.swapCursor( activity.getOutPointCursor() );
 
         }
+    }
+
+    private void handleShowQRCode()
+    {
+        BitmapFragment.show(getFragmentManager(), qrCodeBitmap);
     }
 
     public static OverviewFragment3 newInstance(Bundle args)

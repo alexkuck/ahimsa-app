@@ -3,6 +3,7 @@
 
     <string name="network_test">        Network Test                     </string>
     <string name="reset_ahimwall">      Reset AhimsaWallet               </string>
+    <string name="set_creation_height"> Set Key Creation Height          </string>
     <string name="broadcast_bulletin">  Broadcast Bulletin               </string>
     <string name="broadcast_tx">        Broadcast Transaction            </string>
     <string name="sync_block_chain">    Sync Block Chain                 </string>
@@ -28,6 +29,7 @@
     <string name="import_exceeds_network">      Requested block exceeds network chain head                             </string>
 
     <string name="confirmed_tx">                Confirmed Transaction\ntxid: %1$s                                      </string>
+    <string name="did_not_confirm_tx">          Transaction remains unconfirmed\ntxid: %1$s                              </string>
     <string name="tx_bundle_null">              Transaction bundle from AhimsaWallet was null\ntxid: %1$s              </string>
     <string name="tx_already_confirmed">        Transaction is already confirmed\ntxid: %1$s                           </string>
     <string name="sequential_hashes_null">      Sequential hashes returned null\ntxid: %1$s                            </string>

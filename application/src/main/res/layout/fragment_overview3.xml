@@ -24,7 +24,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentLeft="true"
-                android:text="Your Publishing Address:"
+                android:text="Publishing Address:"
                 android:textStyle="bold|italic"/>
 
             <TextView
@@ -33,18 +33,19 @@
                 android:layout_height="wrap_content"
                 android:typeface="monospace"
                 android:textSize="21dp"
-                android:text="msj42CCGruhRsFrGA\nTiUuh25dtxYtnpbTx"
+                android:text="msj42CCGruhR\nsFrGATiUuh25\ndtxYtnpbTx"
                 android:layout_alignParentLeft="true"/>
 
         </LinearLayout>
 
-
         <ImageView
             android:id="@+id/qr_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
             android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"/>
+            android:layout_alignParentRight="true"
+            android:focusable="true"
+            android:background="@drawable/qrcode_frame"/>
 
     </RelativeLayout>
 
@@ -52,7 +53,7 @@
         android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="15dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true">
 
@@ -67,7 +68,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="35dp"
-                android:text="552,523"
+                android:text="1,100,568"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:singleLine="true"/>
@@ -93,7 +94,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="35dp"
-                android:text="~2,000"
+                android:text="~380,000"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:singleLine="true"/>
@@ -113,7 +114,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:background="#b0b0b0"
         android:id="@+id/horizontal_line_1"></View>
 
@@ -124,7 +125,10 @@
         android:layout_weight="1"
         android:divider="@null"
         android:dividerHeight="0dp"
-        android:scrollbarStyle="outsideInset"></ListView>
+        android:scrollbarStyle="outsideInset"
+        android:smoothScrollbar="false"
+        android:textFilterEnabled="false"
+        ></ListView>
 
     <View
         android:layout_width="match_parent"
@@ -144,15 +148,62 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:layout_marginBottom="75dp"
         android:background="#b0b0b0"
         android:id="@+id/horizontal_line_3"></View>
 
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp">
 
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:text="Bitcoin Network"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold|italic"
+                    android:text="OK "
+                    android:textColor="#ff52ae61"/>
+            </LinearLayout>
+
+        <!--<View-->
+            <!--android:layout_width="1dip"-->
+            <!--android:layout_height="fill_parent"-->
+            <!--android:background="#b0b0b0"-->
+            <!--android:layout_marginLeft="3dp"-->
+            <!--android:layout_marginRight="3dp"-->
+            <!--/>-->
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="ahimsa-web Node"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold|italic"
+                android:text="OK "
+                android:textColor="#ff52ae61"/>
+        </LinearLayout>
+    </LinearLayout>
 
 
 </LinearLayout>
-
 
 
     <!--android:layout_alignTop="@+id/qr_value"-->

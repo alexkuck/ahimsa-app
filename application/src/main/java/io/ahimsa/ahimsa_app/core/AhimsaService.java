@@ -29,6 +29,7 @@ public class AhimsaService extends IntentService
 {
     private static final String ACTION_NETWORK_TEST         = AhimsaService.class.getPackage().getName() + ".network_test";
     private static final String ACTION_RESET_AHIMSA_WALLET  = AhimsaService.class.getPackage().getName() + ".reset";
+    private static final String ACTION_SET_CREATION_HEIGHT  = AhimsaService.class.getPackage().getName() + ".set_creation_height";
     private static final String ACTION_BROADCAST_BULLETIN   = AhimsaService.class.getPackage().getName() + ".broadcast_bulletin";
     private static final String ACTION_BROADCAST_TX         = AhimsaService.class.getPackage().getName() + ".broadcast_tx";
     private static final String ACTION_SYNC_BLOCK_CHAIN     = AhimsaService.class.getPackage().getName() + ".sync_block_chain";
@@ -63,6 +64,13 @@ public class AhimsaService extends IntentService
     {
         Intent intent = new Intent(context, AhimsaService.class);
         intent.setAction(ACTION_RESET_AHIMSA_WALLET);
+        context.startService(intent);
+    }
+
+    public static void startSetCreationHeight(Context context)
+    {
+        Intent intent = new Intent(context, AhimsaService.class);
+        intent.setAction(ACTION_SET_CREATION_HEIGHT);
         context.startService(intent);
     }
 
@@ -141,6 +149,10 @@ public class AhimsaService extends IntentService
             {
                 ahimlog.pushLog(getString(R.string.reset_ahimwall) + getString(R.string.to_queue), AhimsaLog.queue);
             }
+            else if (ACTION_SET_CREATION_HEIGHT.equals(action))
+            {
+                ahimlog.pushLog(getString(R.string.set_creation_height) + getString(R.string.to_queue), AhimsaLog.queue);
+            }
             else if (ACTION_BROADCAST_BULLETIN.equals(action))
             {
                 // final String topic = intent.getStringExtra(EXTRA_STRING_TOPIC);
@@ -208,12 +220,21 @@ public class AhimsaService extends IntentService
             if(ACTION_NETWORK_TEST.equals(action))
             {
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.network_test), AhimsaLog.normal);
+                updatedLog();
                 handleNetworkTest();
             }
             else if(ACTION_RESET_AHIMSA_WALLET.equals(action))
             {
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.reset_ahimwall), AhimsaLog.normal);
+                updatedLog();
                 handleResetAhimsaWallet();
+                updatedOverview();
+            }
+            else if(ACTION_SET_CREATION_HEIGHT.equals(action))
+            {
+                ahimlog.pushLog(getString(R.string.start) + getString(R.string.set_creation_height), AhimsaLog.normal);
+                updatedLog();
+                handleSetCreationHeight();
                 updatedOverview();
             }
             else if(ACTION_BROADCAST_BULLETIN.equals(action))
@@ -223,6 +244,7 @@ public class AhimsaService extends IntentService
                 final Long fee = intent.getLongExtra(EXTRA_LONG_FEE, Constants.MIN_FEE);
 
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.broadcast_bulletin), AhimsaLog.normal);
+                updatedLog();
                 handleBroadcastBulletin(topic, message, fee);
                 updatedOverview();
             }
@@ -232,6 +254,7 @@ public class AhimsaService extends IntentService
                 final boolean assume_confirmed = intent.getBooleanExtra(EXTRA_BOOLEAN_ASSUME_CONF, false);
 
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.broadcast_tx), AhimsaLog.normal);
+                updatedLog();
                 handleBroadcastTx(tx_raw, assume_confirmed);
                 updatedOverview();
             }
@@ -244,6 +267,7 @@ public class AhimsaService extends IntentService
                 final long height = intent.getLongExtra(EXTRA_LONG_HEIGHT, -1);
 
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.import_block), AhimsaLog.normal);
+                updatedLog();
                 handleImportBlock(height);
                 updatedOverview();
             }
@@ -252,6 +276,7 @@ public class AhimsaService extends IntentService
                 final String txid = intent.getStringExtra(EXTRA_STRING_TXID);
 
                 ahimlog.pushLog(getString(R.string.start) + getString(R.string.confirm_tx), AhimsaLog.normal);
+                updatedLog();
                 handleConfirmTx(txid);
                 updatedOverview();
             }
@@ -294,31 +319,26 @@ public class AhimsaService extends IntentService
     //----------------------------------------------------------------------------------------------
     private void handleNetworkTest()
     {
-        //todo logsssss
+
+    }
+
+    private void handleResetAhimsaWallet()
+    {
+
+    }
+
+    private void handleSetCreationHeight()
+    {
         try
         {
             Long peergroup_height = node.getNetworkHeight();
-            config.setHighestBlockSeen( Math.max(peergroup_height, config.getHighestBlockSeen()) );
+            config.setEarliestKeyCreationHeight( peergroup_height );
         }
         catch (Exception e)
         {
             //peergroup is null
             e.printStackTrace();
         }
-
-        // todo | ensure consistency within database, wallet.
-        // todo | restore from backup if inconsistent. reset if backup also inconsistent.
-    }
-
-    private void handleResetAhimsaWallet()
-    {
-        //todo logsssss
-
-        // todo | implement.
-        // Reset then re-initialization config, database, and keyStore.
-//        ahimwall.toLog();
-//        ahimwall.resetDB();
-        ahimwall.toLog();
     }
 
 
@@ -542,7 +562,7 @@ public class AhimsaService extends IntentService
 
                     ahimwall.confirmTx(txid, lower_height);
                     updatedBulletin();
-                    break;
+                    return;
                 }
 
                 if( downloaded.getTimeSeconds() > upper_time )
@@ -553,11 +573,16 @@ public class AhimsaService extends IntentService
 
                     ahimwall.dropTx(txid, lower_height);
                     updatedBulletin();
-                    break;
+                    return;
                 }
                 Log.d(TAG, "set highest block " + lower_height.toString());
                 ahimwall.setHighestBlock(txid, lower_height);
             }
+
+            String words = getString(R.string.did_not_confirm_tx);
+            String details = String.format(words, txid);
+            ahimlog.pushLog(details, AhimsaLog.normal);
+
         }
         catch (Exception e)
         {

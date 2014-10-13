@@ -17,12 +17,14 @@ public class Configuration {
     public static final String PREF_KEY_PRIVKEY_STRING = "private_key";
     public static final String PREF_KEY_PUBPOINT_STRING = "pubkey_point";
     public static final String PREF_KEY_KEY_CREATION_TIME_LONG = "key_creation_time";
+    public static final String PREF_KEY_KEY_CREATION_BLOCK_INT = "key_creation_height";
 
     public static final String PREF_KEY_SYNC_AT_START = "sync_blockchain_at_startup";
     public static final String PREF_KEY_TEMP_CONF_BALANCE = "temp_conf_balance";
     public static final String PREF_KEY_IS_FUNDED = "funded";
     public static final String PREF_FUND_TXID = "fund_txid";
     public static final String PREF_KEY_FUNDING_IP = "funding_ip";
+    public static final String PREF_KEY_AHIMSA_WEB = "ahimsa-web";
     public static final String PREF_KEY_TRUSTED_PEER = "trusted_peer";
     public static final String PREF_KEY_MAX_PEERS = "max_connected_peers";
     public static final String PREF_KEY_MIN_PEERS = "min_connected_peers";
@@ -83,10 +85,20 @@ public class Configuration {
         return prefs.getLong(PREF_KEY_KEY_CREATION_TIME_LONG, 0);
     }
 
+    public Long getEarliestKeyCreationHeight()
+    {
+        return prefs.getLong(PREF_KEY_KEY_CREATION_BLOCK_INT, 0);
+    }
+
+    public void setEarliestKeyCreationHeight(Long x)
+    {
+        prefs.edit().putLong(PREF_KEY_KEY_CREATION_BLOCK_INT, x).commit();
+    }
+
     // AhimsaApplication ---------------------------------------------------------------------------
     public boolean syncBlockChainAtStartup()
     {
-        return prefs.getBoolean(PREF_KEY_SYNC_AT_START, false);
+        return prefs.getBoolean(PREF_KEY_SYNC_AT_START, true);
     }
 
     public void setSyncBlockChainAtStartup(boolean x)
@@ -94,9 +106,13 @@ public class Configuration {
         prefs.edit().putBoolean(PREF_KEY_SYNC_AT_START, x).commit();
     }
 
+
     // Funding -------------------------------------------------------------------------------------
     public String   getFundingIP() { return prefs.getString(PREF_KEY_FUNDING_IP, Constants.ROBINHOOD_FUND);}
-    public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x);}
+    public void     setFundingIP(String x) { prefs.edit().putString(PREF_KEY_FUNDING_IP, x).commit();}
+
+    public String   getAhimsaWebHostName() { return prefs.getString(PREF_KEY_AHIMSA_WEB, Constants.DEFAULT_AHIMSA_WEB);}
+    public void     setAhimsaWebHostName(String x) { prefs.edit().putString(PREF_KEY_AHIMSA_WEB, x).commit();}
 
 
     // BitcoinNode ---------------------------------------------------------------------------------

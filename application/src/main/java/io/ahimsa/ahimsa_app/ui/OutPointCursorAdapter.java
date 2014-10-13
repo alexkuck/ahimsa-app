@@ -25,6 +25,12 @@ public class OutPointCursorAdapter extends ResourceCursorAdapter
     }
 
     @Override
+    public boolean isEnabled(int position)
+    {
+        return false;
+    }
+
+    @Override
     public void bindView(View view, Context context, Cursor cursor)
     {
         //[_id, txouts.txid, txouts.vout, txouts.value, transactions.confirmed]
@@ -46,6 +52,12 @@ public class OutPointCursorAdapter extends ResourceCursorAdapter
             txid_view.setTextColor( Color.rgb(176, 176, 176) );
             vout_view.setTextColor( Color.rgb(176, 176, 176) );
             coin_view.setTextColor( Color.rgb(176, 176, 176) );
+        }
+        else
+        {
+            txid_view.setTextColor( Color.BLACK );
+            vout_view.setTextColor( Color.BLACK );
+            coin_view.setTextColor( Color.BLACK );
         }
 
     }
