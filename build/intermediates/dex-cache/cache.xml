@@ -8,29 +8,29 @@
         revision="19.1.0"
         sha1="908e18674f895e3e1fa8f4a954b8c637a23d2801"/>
     <item
-        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/classes-ad6c9d707cba9ce578711a2f9ed89e6e3dedc58a.jar"
-        jar="/home/askuck/ahimsa-app/application/build/intermediates/exploded-aar/com.astuetz/pagerslidingtabstrip/1.0.1/classes.jar"
-        jumboMode="false"
-        revision="19.1.0"
-        sha1="7912610ed96381c25c36d986eba422731b9641b6"/>
-    <item
         dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/support-v4-19.1.0-44b395d165f6a5e52fd8643be4f952bc7b75fad9.jar"
         jar="/home/askuck/applications/android-studio/sdk/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar"
         jumboMode="false"
         revision="19.1.0"
         sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67"/>
     <item
-        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/bitcoinj-0.12-bundled (8-6-14)-25e73603bc2ed85a082ecf318d6fb0b06f7c5a9e.jar"
-        jar="/home/askuck/ahimsa-app/application/libs/bitcoinj-0.12-bundled (8-6-14).jar"
-        jumboMode="false"
-        revision="19.1.0"
-        sha1="2314afd9c03154b91db91fb01e678172a6d44591"/>
-    <item
         dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/classes-c53219a6f91a66129a2c9d0a054110f7b6020144.jar"
         jar="/home/askuck/ahimsa-app/application/build/intermediates/exploded-aar/com.android.support/appcompat-v7/19.1.0/classes.jar"
         jumboMode="false"
         revision="19.1.0"
         sha1="3499ceba05ca1f6037c6a2fad73df8f636224a28"/>
+    <item
+        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/classes-ad6c9d707cba9ce578711a2f9ed89e6e3dedc58a.jar"
+        jar="/home/askuck/ahimsa-app/application/build/intermediates/exploded-aar/com.astuetz/pagerslidingtabstrip/1.0.1/classes.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="7912610ed96381c25c36d986eba422731b9641b6"/>
+    <item
+        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/bitcoinj-0.12-bundled (8-6-14)-25e73603bc2ed85a082ecf318d6fb0b06f7c5a9e.jar"
+        jar="/home/askuck/ahimsa-app/application/libs/bitcoinj-0.12-bundled (8-6-14).jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="2314afd9c03154b91db91fb01e678172a6d44591"/>
     <item
         dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/support-v13-18.0.0-37d4d725159695a3fce4894d449a85756069c577.jar"
         jar="/home/askuck/applications/android-studio/sdk/extras/android/m2repository/com/android/support/support-v13/18.0.0/support-v13-18.0.0.jar"

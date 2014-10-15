@@ -117,6 +117,14 @@ public class CreateBulletinFragment extends Fragment {
         }
     }
 
+    public void addEntityHash(String hash64)
+    {
+        EditText message_edit = (EditText) getView().findViewById(R.id.message_edit_text);
+        message_edit.setText(message_edit.getText() + "\n![description](img.ahimsa.io/" + hash64.toString() + ")");
+    }
+
+
+
     public static CreateBulletinFragment newInstance(Bundle args) {
         CreateBulletinFragment frag = new CreateBulletinFragment();
         frag.setArguments(args);
@@ -133,8 +141,6 @@ public class CreateBulletinFragment extends Fragment {
 
         return bundle_of_fun;
     }
-
-
 
 
 }
