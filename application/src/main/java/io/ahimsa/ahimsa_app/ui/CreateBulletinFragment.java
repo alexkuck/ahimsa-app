@@ -120,7 +120,7 @@ public class CreateBulletinFragment extends Fragment {
     public void addEntityHash(String hash64)
     {
         EditText message_edit = (EditText) getView().findViewById(R.id.message_edit_text);
-        message_edit.setText(message_edit.getText() + "\n![description](img.ahimsa.io/" + hash64.toString() + ")");
+        message_edit.setText(message_edit.getText() + "\n![description](img.ahimsa.io/" + hash64.toString().trim() + ")");
     }
 
 

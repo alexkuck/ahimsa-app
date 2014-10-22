@@ -26,12 +26,15 @@ import android.widget.Toast;
 import com.google.bitcoin.core.Sha256Hash;
 import com.google.common.io.ByteStreams;
 
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -288,7 +291,8 @@ public class CreateBulletinActivity extends Activity
         {
             Sha256Hash hash = Sha256Hash.create(data[0]);
             Log.d(TAG, "hash | " + hash.toString());
-            String hash64 = Base64.encodeToString(hash.getBytes(), 0);
+
+            String hash64 = Base64.encodeToString(hash.getBytes(), Base64.URL_SAFE);
             Log.d(TAG, "hash64 | " + hash64);
 
             HttpClient httpclient = new DefaultHttpClient();
@@ -298,7 +302,8 @@ public class CreateBulletinActivity extends Activity
 
             try {
                 // Add your data
-                httppost.addHeader("Content-Type", "image/jpeg");
+                httppost.addHeader(HTTP.CONTENT_TYPE, "image/jpeg");
+                // "ContentLength" automatically generated for post request
                 ByteArrayEntity entity = new ByteArrayEntity(data[0]);
                 httppost.setEntity(entity);
 
