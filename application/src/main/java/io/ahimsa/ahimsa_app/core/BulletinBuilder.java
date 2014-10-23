@@ -34,9 +34,9 @@ public class BulletinBuilder
     {
         // Create protocol buffer builder and set values
         WireBulletin.Builder protobuilder = WireBulletin.newBuilder();
-        protobuilder.setVersion(1);
-        protobuilder.setTopic(topic);
+        protobuilder.setBoard(topic);
         protobuilder.setMessage(message);
+        protobuilder.setTimestamp(System.currentTimeMillis() / 1000); //seconds since epoch
 
         // Create a byte array using the builder
         byte[] buffer_bytes = protobuilder.build().toByteArray();

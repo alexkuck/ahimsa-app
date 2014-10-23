@@ -11,45 +11,53 @@ public final class WireBulletinProtos {
     public interface WireBulletinOrBuilder
             extends com.google.protobuf.MessageOrBuilder {
 
-        // required uint32 version = 1;
+        // optional string board = 1;
         /**
-         * <code>required uint32 version = 1;</code>
+         * <code>optional string board = 1;</code>
          */
-        boolean hasVersion();
+        boolean hasBoard();
         /**
-         * <code>required uint32 version = 1;</code>
+         * <code>optional string board = 1;</code>
          */
-        int getVersion();
-
-        // optional string topic = 2;
+        java.lang.String getBoard();
         /**
-         * <code>optional string topic = 2;</code>
-         */
-        boolean hasTopic();
-        /**
-         * <code>optional string topic = 2;</code>
-         */
-        java.lang.String getTopic();
-        /**
-         * <code>optional string topic = 2;</code>
+         * <code>optional string board = 1;</code>
          */
         com.google.protobuf.ByteString
-        getTopicBytes();
+        getBoardBytes();
 
-        // optional string message = 3;
+        // required string message = 2;
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         boolean hasMessage();
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         java.lang.String getMessage();
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         com.google.protobuf.ByteString
         getMessageBytes();
+
+        // optional int64 timestamp = 3;
+        /**
+         * <code>optional int64 timestamp = 3;</code>
+         *
+         * <pre>
+         * Seconds since 00:00:00 Jan 1, 1970
+         * </pre>
+         */
+        boolean hasTimestamp();
+        /**
+         * <code>optional int64 timestamp = 3;</code>
+         *
+         * <pre>
+         * Seconds since 00:00:00 Jan 1, 1970
+         * </pre>
+         */
+        long getTimestamp();
     }
     /**
      * Protobuf type {@code WireBulletin}
@@ -102,19 +110,19 @@ public final class WireBulletinProtos {
                             }
                             break;
                         }
-                        case 8: {
+                        case 10: {
                             bitField0_ |= 0x00000001;
-                            version_ = input.readUInt32();
+                            board_ = input.readBytes();
                             break;
                         }
                         case 18: {
                             bitField0_ |= 0x00000002;
-                            topic_ = input.readBytes();
+                            message_ = input.readBytes();
                             break;
                         }
-                        case 26: {
+                        case 24: {
                             bitField0_ |= 0x00000004;
-                            message_ = input.readBytes();
+                            timestamp_ = input.readInt64();
                             break;
                         }
                     }
@@ -157,36 +165,20 @@ public final class WireBulletinProtos {
         }
 
         private int bitField0_;
-        // required uint32 version = 1;
-        public static final int VERSION_FIELD_NUMBER = 1;
-        private int version_;
+        // optional string board = 1;
+        public static final int BOARD_FIELD_NUMBER = 1;
+        private java.lang.Object board_;
         /**
-         * <code>required uint32 version = 1;</code>
+         * <code>optional string board = 1;</code>
          */
-        public boolean hasVersion() {
+        public boolean hasBoard() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
         }
         /**
-         * <code>required uint32 version = 1;</code>
+         * <code>optional string board = 1;</code>
          */
-        public int getVersion() {
-            return version_;
-        }
-
-        // optional string topic = 2;
-        public static final int TOPIC_FIELD_NUMBER = 2;
-        private java.lang.Object topic_;
-        /**
-         * <code>optional string topic = 2;</code>
-         */
-        public boolean hasTopic() {
-            return ((bitField0_ & 0x00000002) == 0x00000002);
-        }
-        /**
-         * <code>optional string topic = 2;</code>
-         */
-        public java.lang.String getTopic() {
-            java.lang.Object ref = topic_;
+        public java.lang.String getBoard() {
+            java.lang.Object ref = board_;
             if (ref instanceof java.lang.String) {
                 return (java.lang.String) ref;
             } else {
@@ -194,39 +186,39 @@ public final class WireBulletinProtos {
                         (com.google.protobuf.ByteString) ref;
                 java.lang.String s = bs.toStringUtf8();
                 if (bs.isValidUtf8()) {
-                    topic_ = s;
+                    board_ = s;
                 }
                 return s;
             }
         }
         /**
-         * <code>optional string topic = 2;</code>
+         * <code>optional string board = 1;</code>
          */
         public com.google.protobuf.ByteString
-        getTopicBytes() {
-            java.lang.Object ref = topic_;
+        getBoardBytes() {
+            java.lang.Object ref = board_;
             if (ref instanceof java.lang.String) {
                 com.google.protobuf.ByteString b =
                         com.google.protobuf.ByteString.copyFromUtf8(
                                 (java.lang.String) ref);
-                topic_ = b;
+                board_ = b;
                 return b;
             } else {
                 return (com.google.protobuf.ByteString) ref;
             }
         }
 
-        // optional string message = 3;
-        public static final int MESSAGE_FIELD_NUMBER = 3;
+        // required string message = 2;
+        public static final int MESSAGE_FIELD_NUMBER = 2;
         private java.lang.Object message_;
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         public boolean hasMessage() {
-            return ((bitField0_ & 0x00000004) == 0x00000004);
+            return ((bitField0_ & 0x00000002) == 0x00000002);
         }
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         public java.lang.String getMessage() {
             java.lang.Object ref = message_;
@@ -243,7 +235,7 @@ public final class WireBulletinProtos {
             }
         }
         /**
-         * <code>optional string message = 3;</code>
+         * <code>required string message = 2;</code>
          */
         public com.google.protobuf.ByteString
         getMessageBytes() {
@@ -259,17 +251,41 @@ public final class WireBulletinProtos {
             }
         }
 
+        // optional int64 timestamp = 3;
+        public static final int TIMESTAMP_FIELD_NUMBER = 3;
+        private long timestamp_;
+        /**
+         * <code>optional int64 timestamp = 3;</code>
+         *
+         * <pre>
+         * Seconds since 00:00:00 Jan 1, 1970
+         * </pre>
+         */
+        public boolean hasTimestamp() {
+            return ((bitField0_ & 0x00000004) == 0x00000004);
+        }
+        /**
+         * <code>optional int64 timestamp = 3;</code>
+         *
+         * <pre>
+         * Seconds since 00:00:00 Jan 1, 1970
+         * </pre>
+         */
+        public long getTimestamp() {
+            return timestamp_;
+        }
+
         private void initFields() {
-            version_ = 0;
-            topic_ = "";
+            board_ = "";
             message_ = "";
+            timestamp_ = 0L;
         }
         private byte memoizedIsInitialized = -1;
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized != -1) return isInitialized == 1;
 
-            if (!hasVersion()) {
+            if (!hasMessage()) {
                 memoizedIsInitialized = 0;
                 return false;
             }
@@ -281,13 +297,13 @@ public final class WireBulletinProtos {
                 throws java.io.IOException {
             getSerializedSize();
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeUInt32(1, version_);
+                output.writeBytes(1, getBoardBytes());
             }
             if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                output.writeBytes(2, getTopicBytes());
+                output.writeBytes(2, getMessageBytes());
             }
             if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                output.writeBytes(3, getMessageBytes());
+                output.writeInt64(3, timestamp_);
             }
             getUnknownFields().writeTo(output);
         }
@@ -300,15 +316,15 @@ public final class WireBulletinProtos {
             size = 0;
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 size += com.google.protobuf.CodedOutputStream
-                        .computeUInt32Size(1, version_);
+                        .computeBytesSize(1, getBoardBytes());
             }
             if (((bitField0_ & 0x00000002) == 0x00000002)) {
                 size += com.google.protobuf.CodedOutputStream
-                        .computeBytesSize(2, getTopicBytes());
+                        .computeBytesSize(2, getMessageBytes());
             }
             if (((bitField0_ & 0x00000004) == 0x00000004)) {
                 size += com.google.protobuf.CodedOutputStream
-                        .computeBytesSize(3, getMessageBytes());
+                        .computeInt64Size(3, timestamp_);
             }
             size += getUnknownFields().getSerializedSize();
             memoizedSerializedSize = size;
@@ -426,11 +442,11 @@ public final class WireBulletinProtos {
 
             public Builder clear() {
                 super.clear();
-                version_ = 0;
+                board_ = "";
                 bitField0_ = (bitField0_ & ~0x00000001);
-                topic_ = "";
-                bitField0_ = (bitField0_ & ~0x00000002);
                 message_ = "";
+                bitField0_ = (bitField0_ & ~0x00000002);
+                timestamp_ = 0L;
                 bitField0_ = (bitField0_ & ~0x00000004);
                 return this;
             }
@@ -463,15 +479,15 @@ public final class WireBulletinProtos {
                 if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
                     to_bitField0_ |= 0x00000001;
                 }
-                result.version_ = version_;
+                result.board_ = board_;
                 if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
                     to_bitField0_ |= 0x00000002;
                 }
-                result.topic_ = topic_;
+                result.message_ = message_;
                 if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
                     to_bitField0_ |= 0x00000004;
                 }
-                result.message_ = message_;
+                result.timestamp_ = timestamp_;
                 result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
@@ -488,25 +504,25 @@ public final class WireBulletinProtos {
 
             public Builder mergeFrom(WireBulletinProtos.WireBulletin other) {
                 if (other == WireBulletinProtos.WireBulletin.getDefaultInstance()) return this;
-                if (other.hasVersion()) {
-                    setVersion(other.getVersion());
-                }
-                if (other.hasTopic()) {
-                    bitField0_ |= 0x00000002;
-                    topic_ = other.topic_;
+                if (other.hasBoard()) {
+                    bitField0_ |= 0x00000001;
+                    board_ = other.board_;
                     onChanged();
                 }
                 if (other.hasMessage()) {
-                    bitField0_ |= 0x00000004;
+                    bitField0_ |= 0x00000002;
                     message_ = other.message_;
                     onChanged();
+                }
+                if (other.hasTimestamp()) {
+                    setTimestamp(other.getTimestamp());
                 }
                 this.mergeUnknownFields(other.getUnknownFields());
                 return this;
             }
 
             public final boolean isInitialized() {
-                if (!hasVersion()) {
+                if (!hasMessage()) {
 
                     return false;
                 }
@@ -532,123 +548,90 @@ public final class WireBulletinProtos {
             }
             private int bitField0_;
 
-            // required uint32 version = 1;
-            private int version_ ;
+            // optional string board = 1;
+            private java.lang.Object board_ = "";
             /**
-             * <code>required uint32 version = 1;</code>
+             * <code>optional string board = 1;</code>
              */
-            public boolean hasVersion() {
+            public boolean hasBoard() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
             }
             /**
-             * <code>required uint32 version = 1;</code>
+             * <code>optional string board = 1;</code>
              */
-            public int getVersion() {
-                return version_;
-            }
-            /**
-             * <code>required uint32 version = 1;</code>
-             */
-            public Builder setVersion(int value) {
-                bitField0_ |= 0x00000001;
-                version_ = value;
-                onChanged();
-                return this;
-            }
-            /**
-             * <code>required uint32 version = 1;</code>
-             */
-            public Builder clearVersion() {
-                bitField0_ = (bitField0_ & ~0x00000001);
-                version_ = 0;
-                onChanged();
-                return this;
-            }
-
-            // optional string topic = 2;
-            private java.lang.Object topic_ = "";
-            /**
-             * <code>optional string topic = 2;</code>
-             */
-            public boolean hasTopic() {
-                return ((bitField0_ & 0x00000002) == 0x00000002);
-            }
-            /**
-             * <code>optional string topic = 2;</code>
-             */
-            public java.lang.String getTopic() {
-                java.lang.Object ref = topic_;
+            public java.lang.String getBoard() {
+                java.lang.Object ref = board_;
                 if (!(ref instanceof java.lang.String)) {
                     java.lang.String s = ((com.google.protobuf.ByteString) ref)
                             .toStringUtf8();
-                    topic_ = s;
+                    board_ = s;
                     return s;
                 } else {
                     return (java.lang.String) ref;
                 }
             }
             /**
-             * <code>optional string topic = 2;</code>
+             * <code>optional string board = 1;</code>
              */
             public com.google.protobuf.ByteString
-            getTopicBytes() {
-                java.lang.Object ref = topic_;
+            getBoardBytes() {
+                java.lang.Object ref = board_;
                 if (ref instanceof String) {
                     com.google.protobuf.ByteString b =
                             com.google.protobuf.ByteString.copyFromUtf8(
                                     (java.lang.String) ref);
-                    topic_ = b;
+                    board_ = b;
                     return b;
                 } else {
                     return (com.google.protobuf.ByteString) ref;
                 }
             }
             /**
-             * <code>optional string topic = 2;</code>
+             * <code>optional string board = 1;</code>
              */
-            public Builder setTopic(
+            public Builder setBoard(
                     java.lang.String value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                bitField0_ |= 0x00000002;
-                topic_ = value;
+                bitField0_ |= 0x00000001;
+                board_ = value;
                 onChanged();
                 return this;
             }
             /**
-             * <code>optional string topic = 2;</code>
+             * <code>optional string board = 1;</code>
              */
-            public Builder clearTopic() {
-                bitField0_ = (bitField0_ & ~0x00000002);
-                topic_ = getDefaultInstance().getTopic();
+            public Builder clearBoard() {
+                bitField0_ = (bitField0_ & ~0x00000001);
+                board_ = getDefaultInstance().getBoard();
                 onChanged();
                 return this;
             }
             /**
-             * <code>optional string topic = 2;</code>
+             * <code>optional string board = 1;</code>
              */
-            public Builder setTopicBytes(
+            public Builder setBoardBytes(
                     com.google.protobuf.ByteString value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                bitField0_ |= 0x00000002;
-                topic_ = value;
+                bitField0_ |= 0x00000001;
+                board_ = value;
                 onChanged();
                 return this;
             }
 
-            // optional string message = 3;
+            // required string message = 2;
             private java.lang.Object message_ = "";
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public boolean hasMessage() {
-                return ((bitField0_ & 0x00000004) == 0x00000004);
+                return ((bitField0_ & 0x00000002) == 0x00000002);
             }
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public java.lang.String getMessage() {
                 java.lang.Object ref = message_;
@@ -662,7 +645,7 @@ public final class WireBulletinProtos {
                 }
             }
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public com.google.protobuf.ByteString
             getMessageBytes() {
@@ -678,37 +661,86 @@ public final class WireBulletinProtos {
                 }
             }
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public Builder setMessage(
                     java.lang.String value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                bitField0_ |= 0x00000004;
+                bitField0_ |= 0x00000002;
                 message_ = value;
                 onChanged();
                 return this;
             }
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public Builder clearMessage() {
-                bitField0_ = (bitField0_ & ~0x00000004);
+                bitField0_ = (bitField0_ & ~0x00000002);
                 message_ = getDefaultInstance().getMessage();
                 onChanged();
                 return this;
             }
             /**
-             * <code>optional string message = 3;</code>
+             * <code>required string message = 2;</code>
              */
             public Builder setMessageBytes(
                     com.google.protobuf.ByteString value) {
                 if (value == null) {
                     throw new NullPointerException();
                 }
-                bitField0_ |= 0x00000004;
+                bitField0_ |= 0x00000002;
                 message_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional int64 timestamp = 3;
+            private long timestamp_ ;
+            /**
+             * <code>optional int64 timestamp = 3;</code>
+             *
+             * <pre>
+             * Seconds since 00:00:00 Jan 1, 1970
+             * </pre>
+             */
+            public boolean hasTimestamp() {
+                return ((bitField0_ & 0x00000004) == 0x00000004);
+            }
+            /**
+             * <code>optional int64 timestamp = 3;</code>
+             *
+             * <pre>
+             * Seconds since 00:00:00 Jan 1, 1970
+             * </pre>
+             */
+            public long getTimestamp() {
+                return timestamp_;
+            }
+            /**
+             * <code>optional int64 timestamp = 3;</code>
+             *
+             * <pre>
+             * Seconds since 00:00:00 Jan 1, 1970
+             * </pre>
+             */
+            public Builder setTimestamp(long value) {
+                bitField0_ |= 0x00000004;
+                timestamp_ = value;
+                onChanged();
+                return this;
+            }
+            /**
+             * <code>optional int64 timestamp = 3;</code>
+             *
+             * <pre>
+             * Seconds since 00:00:00 Jan 1, 1970
+             * </pre>
+             */
+            public Builder clearTimestamp() {
+                bitField0_ = (bitField0_ & ~0x00000004);
+                timestamp_ = 0L;
                 onChanged();
                 return this;
             }
@@ -738,9 +770,9 @@ public final class WireBulletinProtos {
             descriptor;
     static {
         java.lang.String[] descriptorData = {
-                "\n\022wirebulletin.proto\"?\n\014WireBulletin\022\017\n\007" +
-                        "version\030\001 \002(\r\022\r\n\005topic\030\002 \001(\t\022\017\n\007message\030" +
-                        "\003 \001(\tB\024B\022WireBulletinProtos"
+                "\n\022wirebulletin.proto\"A\n\014WireBulletin\022\r\n\005" +
+                        "board\030\001 \001(\t\022\017\n\007message\030\002 \002(\t\022\021\n\ttimestam" +
+                        "p\030\003 \001(\003B\024B\022WireBulletinProtos"
         };
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
                 new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -752,7 +784,7 @@ public final class WireBulletinProtos {
                         internal_static_WireBulletin_fieldAccessorTable = new
                                 com.google.protobuf.GeneratedMessage.FieldAccessorTable(
                                 internal_static_WireBulletin_descriptor,
-                                new java.lang.String[] { "Version", "Topic", "Message", });
+                                new java.lang.String[] { "Board", "Message", "Timestamp", });
                         return null;
                     }
                 };

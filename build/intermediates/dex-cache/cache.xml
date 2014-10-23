@@ -20,6 +20,12 @@
         revision="19.1.0"
         sha1="3499ceba05ca1f6037c6a2fad73df8f636224a28"/>
     <item
+        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/support-v13-18.0.0-37d4d725159695a3fce4894d449a85756069c577.jar"
+        jar="/home/askuck/applications/android-studio/sdk/extras/android/m2repository/com/android/support/support-v13/18.0.0/support-v13-18.0.0.jar"
+        jumboMode="false"
+        revision="19.1.0"
+        sha1="6a2fa0c0b54359ee359fd40244e1ce2dc6cab408"/>
+    <item
         dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/classes-ad6c9d707cba9ce578711a2f9ed89e6e3dedc58a.jar"
         jar="/home/askuck/ahimsa-app/application/build/intermediates/exploded-aar/com.astuetz/pagerslidingtabstrip/1.0.1/classes.jar"
         jumboMode="false"
@@ -31,11 +37,5 @@
         jumboMode="false"
         revision="19.1.0"
         sha1="2314afd9c03154b91db91fb01e678172a6d44591"/>
-    <item
-        dex="/home/askuck/ahimsa-app/application/build/intermediates/pre-dexed/debug/support-v13-18.0.0-37d4d725159695a3fce4894d449a85756069c577.jar"
-        jar="/home/askuck/applications/android-studio/sdk/extras/android/m2repository/com/android/support/support-v13/18.0.0/support-v13-18.0.0.jar"
-        jumboMode="false"
-        revision="19.1.0"
-        sha1="6a2fa0c0b54359ee359fd40244e1ce2dc6cab408"/>
 
 </pre-dex-items>
