@@ -29,6 +29,7 @@ public class Utils {
         return data;
     }
 
+    /*
     final protected static char[] hexArray = "0123456789abcdef".toCharArray();
     public static String bytesToHex(byte[] bytes) {
 
@@ -40,6 +41,12 @@ public class Utils {
         }
 
         return new String(hexChars);
+    }
+    */
+
+    public static String bytesToHex(byte[] bytes) {
+        BigInteger bi = new BigInteger(1, bytes);
+        return String.format("%0" + (bytes.length << 1) + "X", bi);
     }
 
     public static Long characterEstimator(Long satoshis)

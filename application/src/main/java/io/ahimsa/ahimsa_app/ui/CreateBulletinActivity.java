@@ -21,6 +21,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Toast;
 
 import com.google.bitcoin.core.Sha256Hash;
@@ -57,6 +58,8 @@ public class CreateBulletinActivity extends Activity
     Configuration config;
     CreateBulletinFragment frag;
 
+    boolean show_camera_item = true;
+
     String TAG = "CreateBulletinActivity";
 
     @Override
@@ -69,6 +72,8 @@ public class CreateBulletinActivity extends Activity
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+
         application = (AhimsaApplication) getApplication();
         ahimwall = application.getAhimsaWallet();
         config = application.getConfig();
@@ -122,6 +127,12 @@ public class CreateBulletinActivity extends Activity
     {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.create_bulletin, menu);
+
+        if(!show_camera_item)
+        {
+            menu.getItem(0).setVisible(false);
+        }
+
         return true;
     }
 
@@ -285,6 +296,13 @@ public class CreateBulletinActivity extends Activity
 
     private class uploadImageTask extends AsyncTask<byte[], Void, String>
     {
+        protected void onPreExecute()
+        {
+            setProgressBarIndeterminateVisibility(true);
+            show_camera_item = false;
+            invalidateOptionsMenu();
+        }
+
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected String doInBackground(byte[]... data)
@@ -335,6 +353,9 @@ public class CreateBulletinActivity extends Activity
             if(hash64 != null)
             {
                 frag.addEntityHash(hash64);
+                setProgressBarIndeterminateVisibility(false);
+                show_camera_item = true;
+                invalidateOptionsMenu();
             }
         }
     }
