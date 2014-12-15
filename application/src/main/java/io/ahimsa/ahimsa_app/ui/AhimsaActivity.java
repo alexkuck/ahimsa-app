@@ -200,21 +200,40 @@ public class AhimsaActivity extends Activity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings)
-        {
-//            AhimsaService.startResetAhimsaWallet(this);
-//            AhimsaService.startSyncBlockChain(this);
-            Intent i = new Intent(this, SettingsActivity.class);
-            startActivityForResult(i, RESULT_SETTINGS);
-            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-            return true;
-        }
-        else if (id == R.id.action_create_bulletin)
+        if (id == R.id.action_create_bulletin)
         {
             Intent intent = new Intent(this, CreateBulletinActivity.class);
             startActivity(intent);
             overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
             return true;
+        }
+        if (id == R.id.action_sync_now)
+        {
+            AhimsaService.startSyncBlockChain(this);
+            return true;
+        }
+        if (id == R.id.action_export_coin)
+        {
+            //todo
+        }
+        if (id == R.id.action_settings)
+        {
+            Intent i = new Intent(this, SettingsActivity.class);
+            startActivityForResult(i, RESULT_SETTINGS);
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+            return true;
+        }
+        if (id == R.id.action_about)
+        {
+
+        }
+        if (id == R.id.action_source)
+        {
+
+        }
+        if (id == R.id.action_licenses)
+        {
+
         }
         return super.onOptionsItemSelected(item);
     }
